@@ -37,17 +37,16 @@ describe('Turntable', () => {
     expect(onNeedleClick).toHaveBeenCalledOnce();
   });
 
-  it('braço em SVG com base, contrapeso, haste e cápsula', () => {
+  it('braço é o recorte da foto, com área de clique só no desenho', () => {
     render(<Turntable playing={false} />);
     const arm = screen.getByTestId('tonearm');
-    for (const part of ['base', 'counterweight', 'tube', 'cartridge']) {
-      expect(arm.querySelector(`svg .tonearm__${part}`)).not.toBeNull();
-    }
+    expect(arm.querySelector('img.tonearm__photo')).not.toBeNull();
+    expect(arm.querySelector('svg.tonearm__hit path')).not.toBeNull();
   });
 
-  it('reflexo fica fora do disco que gira', () => {
+  it('foto (com os reflexos) fica fora do selo que gira', () => {
     render(<Turntable playing />);
-    expect(screen.getByTestId('record')).not.toContainElement(screen.getByTestId('sheen'));
+    expect(screen.getByTestId('record')).not.toContainElement(screen.getByTestId('turntable-photo'));
   });
 
   describe('giro do prato', () => {

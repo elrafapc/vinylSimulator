@@ -25,20 +25,84 @@ describe('player', () => {
     return { url: url as string, method: init.method as string | undefined, body: init.body as string | undefined };
   };
 
-  it('playDisc envia o context_uri do álbum', async () => {
-    fetchMock.mockResolvedValue(empty());
-    await playDisc('spotify:album:a1');
-    expect(call(0)).toEqual({
-      url: 'https://api.spotify.com/v1/me/player/play',
-      method: 'PUT',
-      body: JSON.stringify({ context_uri: 'spotify:album:a1' }),
+  const devices = (list: Array<{ id: string; active?: boolean; restricted?: boolean }>) =>
+    json({
+      devices: list.map((d) => ({ id: d.id, name: d.id, type: 'Computer', is_active: d.active ?? false, is_restricted: d.restricted ?? false })),
     });
+  const player = (shuffle: boolean) => json({ is_playing: true, shuffle_state: shuffle, item: null });
+
+  // Responde por endpoint, para o teste conferir a ordem das chamadas.
+  function spotify({ deviceList = devices([{ id: 'd1', active: true }]), shuffleStates = [false] } = {}) {
+    const states = [...shuffleStates];
+    fetchMock.mockImplementation((url: string) => {
+      if (url.includes('/me/player/devices')) return Promise.resolve(deviceList.clone());
+      if (url.endsWith('/me/player')) return Promise.resolve(player(states.length > 1 ? states.shift()! : states[0]));
+      return Promise.resolve(empty());
+    });
+  }
+
+  const urls = () => fetchMock.mock.calls.map(([url, init]) => `${(init?.method as string | undefined) ?? 'GET'} ${(url as string).replace('https://api.spotify.com/v1', '')}`);
+
+  it('playDisc desliga o aleatório antes e depois do play, na ordem certa', async () => {
+    spotify();
+    await playDisc('spotify:album:a1');
+    expect(urls()).toEqual([
+      'GET /me/player/devices',
+      'PUT /me/player/shuffle?state=false&device_id=d1',
+      'PUT /me/player/play?device_id=d1',
+      'PUT /me/player/shuffle?state=false&device_id=d1',
+      'GET /me/player',
+    ]);
   });
 
-  it('playDisc também toca playlists', async () => {
-    fetchMock.mockResolvedValue(empty());
+  it('playDisc começa da faixa 1, do início', async () => {
+    spotify();
+    await playDisc('spotify:album:a1');
+    expect(call(2).body).toBe(JSON.stringify({ context_uri: 'spotify:album:a1', offset: { position: 0 }, position_ms: 0 }));
+  });
+
+  it('playlists seguem a mesma regra', async () => {
+    spotify();
     await playDisc('spotify:playlist:p1');
-    expect(call(0).body).toBe(JSON.stringify({ context_uri: 'spotify:playlist:p1' }));
+    expect(urls()).toContain('PUT /me/player/shuffle?state=false&device_id=d1');
+    expect(call(2).body).toBe(JSON.stringify({ context_uri: 'spotify:playlist:p1', offset: { position: 0 }, position_ms: 0 }));
+  });
+
+  it('se o aleatório continuar ligado, desliga mais uma vez e avisa no console', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    spotify({ shuffleStates: [true] });
+    await playDisc('spotify:album:a1');
+    expect(urls().slice(-2)).toEqual(['GET /me/player', 'PUT /me/player/shuffle?state=false&device_id=d1']);
+    expect(urls().filter((u) => u.includes('/shuffle'))).toHaveLength(3);
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it('usa o dispositivo ativo; sem ativo, o primeiro disponível (ignorando restritos)', async () => {
+    spotify({ deviceList: devices([{ id: 'd1' }, { id: 'd2', active: true }]) });
+    await playDisc('spotify:album:a1');
+    expect(urls()[2]).toBe('PUT /me/player/play?device_id=d2');
+
+    fetchMock.mockReset();
+    spotify({ deviceList: devices([{ id: 'r1', restricted: true }, { id: 'd3' }]) });
+    await playDisc('spotify:album:a1');
+    expect(urls().every((u) => !u.includes('device_id=') || u.includes('device_id=d3'))).toBe(true);
+  });
+
+  it('dispositivo ocioso que recusa o primeiro shuffle ainda toca e desliga depois', async () => {
+    spotify({ deviceList: devices([{ id: 'd1' }]) });
+    const base = fetchMock.getMockImplementation()!;
+    let first = true;
+    fetchMock.mockImplementation((url: string, init?: RequestInit) => {
+      if (url.includes('/shuffle') && first) {
+        first = false;
+        return Promise.resolve(noDevice());
+      }
+      return base(url, init);
+    });
+    await playDisc('spotify:album:a1');
+    expect(urls()).toContain('PUT /me/player/play?device_id=d1');
+    expect(urls().filter((u) => u.includes('/shuffle'))).toHaveLength(2);
   });
 
   it('resume dá play sem corpo', async () => {
@@ -77,19 +141,19 @@ describe('player', () => {
     expect(await getNowPlaying()).toMatchObject({ volumePercent: undefined, supportsVolume: false });
   });
 
-  it('sem dispositivo ativo, toca no primeiro dispositivo disponível', async () => {
+  it('resume sem dispositivo ativo toca no primeiro dispositivo disponível', async () => {
     fetchMock
       .mockResolvedValueOnce(noDevice())
       .mockResolvedValueOnce(
         json({ devices: [{ id: 'd1', name: 'Mac', type: 'Computer', is_active: false, is_restricted: false }] }),
       )
       .mockResolvedValueOnce(empty());
-    await playDisc('spotify:album:a1');
+    await resume();
     expect(call(2).url).toBe('https://api.spotify.com/v1/me/player/play?device_id=d1');
   });
 
   it('sem nenhum dispositivo, lança "Abra o Spotify em algum dispositivo"', async () => {
-    fetchMock.mockResolvedValueOnce(noDevice()).mockResolvedValueOnce(json({ devices: [] }));
+    fetchMock.mockResolvedValueOnce(json({ devices: [] }));
     await expect(playDisc('spotify:album:a1')).rejects.toMatchObject({
       kind: 'no-device',
       message: 'Abra o Spotify em algum dispositivo',

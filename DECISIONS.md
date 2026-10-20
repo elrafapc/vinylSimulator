@@ -130,3 +130,18 @@
 - Decisão: um loop `requestAnimationFrame` dentro do `Turntable` controla a velocidade (até 33⅓ rpm) e escreve `rotate()` direto no estilo do disco, sem re-render do React. Começa só depois do braço chegar e a agulha descer (1,2s). Com `prefers-reduced-motion`, não gira. O resto (braço, agulha, LED) continua em CSS; braço desenhado em SVG inline.
 - Alternativas: só CSS — mais simples, mas com salto visível da capa.
 - Consequência: única animação em JS do app; sem biblioteca.
+
+## ADR-018 — Vitrola a partir de uma foto (substitui o desenho em CSS/SVG da T25)
+
+- Data: 2026-10-20
+- Contexto: o desenho em CSS/SVG não chegava ao realismo desejado; o Rafael escolheu uma foto de vitrola (vista de cima, madeira, tampa acrílica) para ser a vitrola.
+- Decisão: a foto virou duas camadas em `src/assets/`: `turntable-base.png` (vitrola sem o braço; o vazio foi preenchido com textura vizinha — sulcos copiados do lado oposto do disco, madeira e base do braço por cópia/rotação) e `turntable-arm.png` (braço recortado: contrapeso, torre do cardan, tubo e cápsula). O braço gira pelo centro da torre: tocando = posição da foto (0°), parado = -14° (descanso, fora do disco e antes do botão 33/45). A capa do álbum gira por cima do selo da foto; os reflexos do disco ficam parados na foto. Só o desenho do braço é clicável (SVG transparente por cima).
+- Alternativas: braço desenhado em SVG sobre a foto — não combinava com o estilo fotográfico.
+- Consequência: a vitrola é igual nos dois temas (no escuro, `brightness(0.9)`); variáveis de cor da vitrola saíram do `theme.css`. A foto pode ter direitos de uso: ok para uso pessoal local, rever antes de publicar o repositório ou hospedar o app.
+
+## ADR-019 — Tocar disco sempre em ordem, da faixa 1
+
+- Data: 2026-10-20
+- Contexto: o Spotify guarda o aleatório do último uso; `playDisc` só mandava o `context_uri`, então o álbum começava em ordem aleatória.
+- Decisão: `playDisc` escolhe o dispositivo antes (ativo ou o primeiro disponível, sem restritos), desliga o shuffle, dá play com `offset.position: 0` e `position_ms: 0`, desliga o shuffle de novo e confere em `GET /me/player`; se `shuffle_state` ainda vier `true`, desliga mais uma vez e avisa no console. Vale para álbuns e playlists. Se o dispositivo ocioso recusar o primeiro shuffle, segue (o desligamento depois do play cobre).
+- Consequência: tocar um disco faz 5 a 6 chamadas em vez de 1–3. Substitui, para `playDisc`, o fallback da ADR-006 (que continua valendo para `resume`). O aleatório fica desligado no Spotify depois de usar o vinil.

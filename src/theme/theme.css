@@ -20,31 +20,10 @@
   --focus: #f0c674;
   --backdrop: rgb(0 0 0 / 0.6);
 
-  --plinth: #3a2a20;
-  --plinth-grain-a: rgb(255 214 170 / 0.05);
-  --plinth-grain-b: rgb(0 0 0 / 0.14);
-  --plinth-sheen: rgb(255 255 255 / 0.06);
-  --plinth-edge: rgb(255 255 255 / 0.12);
-  --plinth-edge-dark: rgb(0 0 0 / 0.4);
   --shadow: rgb(0 0 0 / 0.55);
+  /* A foto da vitrola é a mesma nos dois temas; no escuro, um pouco mais apagada. */
+  --turntable-filter: brightness(0.9);
   --shadow-soft: rgb(0 0 0 / 0.4);
-  --record: #121212;
-  --record-groove: #1b1b1b;
-  --record-band: #0b0b0b;
-  --record-edge: #2c2c2c;
-  --record-reflection: rgb(255 255 255 / 0.05);
-  --record-reflection-strong: rgb(255 255 255 / 0.11);
-  --label: #b5452f;
-  --label-ring: #0c0c0c;
-  --label-matte: rgb(255 255 255 / 0.06);
-  --metal-light: #ececec;
-  --metal-mid: #a6a6a6;
-  --metal-dark: #5e5e5e;
-  --arm-base: #1c1c1c;
-  --cartridge: #cfcfcf;
-  --cartridge-dots: #3a3a3a;
-  --led-off: #4a2a22;
-  --led-on: #ff5a3c;
 
   --shelf-back: #1a1411;
   --shelf-wood: #5a4030;
@@ -71,17 +50,9 @@
   --focus: #b86a1f;
   --backdrop: rgb(40 28 18 / 0.45);
 
-  --plinth: #e8dfcf;
-  --plinth-grain-a: rgb(150 110 60 / 0.07);
-  --plinth-grain-b: rgb(120 85 45 / 0.06);
-  --plinth-sheen: rgb(255 255 255 / 0.45);
-  --plinth-edge: rgb(255 255 255 / 0.75);
-  --plinth-edge-dark: rgb(90 65 40 / 0.18);
   --shadow: rgb(60 40 20 / 0.32);
+  --turntable-filter: none;
   --shadow-soft: rgb(60 40 20 / 0.22);
-  --record-reflection: rgb(255 255 255 / 0.07);
-  --record-reflection-strong: rgb(255 255 255 / 0.14);
-  --cartridge: #e4e4e4;
 
   --shelf-back: #ece2d4;
   --shelf-wood: #b48a5c;

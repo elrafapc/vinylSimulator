@@ -1,4 +1,6 @@
-import { useEffect, useId, useRef, type RefObject } from 'react';
+import { useEffect, useRef, type RefObject } from 'react';
+import armUrl from '../assets/turntable-arm.png';
+import baseUrl from '../assets/turntable-base.png';
 import './Turntable.css';
 
 interface TurntableProps {
@@ -52,34 +54,31 @@ function usePlatterSpin(playing: boolean, recordRef: RefObject<HTMLDivElement | 
   }, [playing, recordRef]);
 }
 
-// Grade de furos da cápsula.
-const GRILLE = Array.from({ length: 24 }, (_, i) => ({ x: 392 + (i % 4) * 4, y: 296 + Math.floor(i / 4) * 4.4 }));
-// Mesmo traço do tubo, desenhado três vezes (corpo, borda escura, brilho) para parecer cromado.
-const TUBE = 'M412 46 L412 200 C412 236 398 244 398 276 L398 290';
+// Área clicável do braço, nas coordenadas do recorte (turntable-arm.png, 384×633):
+// contrapeso → torre → tubo → cápsula. Só o desenho responde ao clique, não o retângulo todo.
+const ARM_HIT_PATH = 'M341 40 L292 146 L268 199 L249 279 L231 359 L221 399 L204 439 L171 479 L121 524 L70 572';
+const HEADSHELL_HIT = '2,589 86,514 129,561 48,630';
 
 export function Turntable({ playing, coverUrl, albumName, disabled, onNeedleClick }: TurntableProps) {
   const state = playing ? 'turntable--playing' : 'turntable--stopped';
   const recordRef = useRef<HTMLDivElement>(null);
   usePlatterSpin(playing, recordRef);
-  const id = useId().replace(/[^a-zA-Z0-9]/g, '');
-  const chrome = `chrome-${id}`;
-  const knob = `knob-${id}`;
 
   return (
     <div className={`turntable ${state}`} data-testid="turntable">
-      <div className="turntable__platter">
-        <div className="turntable__record" data-testid="record" ref={recordRef}>
-          <div
-            className="turntable__label"
-            role="img"
-            aria-label={albumName ? `Capa de ${albumName}` : 'Sem disco'}
-            style={coverUrl ? { backgroundImage: `url(${coverUrl})` } : undefined}
-          />
-        </div>
-        {/* Luz fixa: só o disco gira por baixo dela. */}
-        <div className="turntable__sheen" data-testid="sheen" aria-hidden />
-        <span className="turntable__spindle" aria-hidden />
+      {/* Foto da vitrola sem o braço; os reflexos do disco ficam nela, parados. */}
+      <img className="turntable__photo" data-testid="turntable-photo" src={baseUrl} alt="" draggable={false} />
+
+      {/* Selo: a capa gira por cima do selo da foto. */}
+      <div className="turntable__record" data-testid="record" ref={recordRef}>
+        <div
+          className="turntable__label"
+          role="img"
+          aria-label={albumName ? `Capa de ${albumName}` : 'Sem disco'}
+          style={coverUrl ? { backgroundImage: `url(${coverUrl})` } : undefined}
+        />
       </div>
+      <span className="turntable__spindle" aria-hidden />
 
       <button
         type="button"
@@ -89,59 +88,17 @@ export function Turntable({ playing, coverUrl, albumName, disabled, onNeedleClic
         disabled={disabled}
         onClick={onNeedleClick}
       >
-        <svg className="tonearm" viewBox="0 0 460 380" aria-hidden focusable="false">
-          <defs>
-            <linearGradient id={chrome} x1="0" x2="1" y1="0" y2="0">
-              <stop offset="0" style={{ stopColor: 'var(--metal-dark)' }} />
-              <stop offset="0.3" style={{ stopColor: 'var(--metal-light)' }} />
-              <stop offset="0.55" style={{ stopColor: 'var(--metal-mid)' }} />
-              <stop offset="1" style={{ stopColor: 'var(--metal-dark)' }} />
-            </linearGradient>
-            <radialGradient id={knob} cx="0.5" cy="0.5" fx="0.35" fy="0.3" r="0.6">
-              <stop offset="0" style={{ stopColor: 'var(--metal-light)' }} />
-              <stop offset="0.6" style={{ stopColor: 'var(--metal-mid)' }} />
-              <stop offset="1" style={{ stopColor: 'var(--metal-dark)' }} />
-            </radialGradient>
-          </defs>
-
-          {/* Base fixa do braço. */}
-          <g className="tonearm__base">
-            <circle cx="412" cy="52" r="26" className="tonearm__plate" />
-            <rect x="384" y="49" width="6" height="6" rx="1" className="tonearm__notch" />
-            <rect x="434" y="49" width="6" height="6" rx="1" className="tonearm__notch" />
-            <circle cx="412" cy="52" r="15" fill={`url(#${knob})`} />
-          </g>
-
-          {/* Desce (sombra menor) depois de girar até o disco. */}
-          <g className="tonearm__lift">
-            <g className="tonearm__swing">
-              <rect x="409.5" y="10" width="5" height="38" fill={`url(#${chrome})`} />
-              <g className="tonearm__counterweight">
-                <rect x="401" y="15" width="22" height="24" rx="3" fill={`url(#${chrome})`} />
-                {[20, 24, 28, 32].map((y) => (
-                  <line key={y} x1="402" x2="422" y1={y} y2={y} className="tonearm__scale" />
-                ))}
-                <rect x="405" y="8" width="14" height="8" rx="2" className="tonearm__cap" />
-              </g>
-
-              <path d={TUBE} className="tonearm__tube-edge" transform="translate(1.4 0.6)" />
-              <path d={TUBE} className="tonearm__tube" />
-              <path d={TUBE} className="tonearm__tube-shine" transform="translate(-1.2 0)" />
-              <circle cx="412" cy="52" r="8" fill={`url(#${knob})`} className="tonearm__collar" />
-
-              <g className="tonearm__headshell">
-                <rect x="393" y="282" width="10" height="10" rx="1" className="tonearm__connector" />
-                <path d="M406 302 L417 297" className="tonearm__finger" />
-                <rect x="388" y="290" width="20" height="36" rx="2" className="tonearm__cartridge" />
-                {GRILLE.map(({ x, y }) => (
-                  <circle key={`${x}-${y}`} cx={x} cy={y} r="0.9" className="tonearm__grille" />
-                ))}
-              </g>
-            </g>
-          </g>
-        </svg>
+        <span className="tonearm__lift">
+          <span className="tonearm__swing">
+            <img className="tonearm__photo" src={armUrl} alt="" draggable={false} />
+            <svg className="tonearm__hit" viewBox="0 0 384 633" aria-hidden focusable="false">
+              <path d={ARM_HIT_PATH} />
+              <polygon points={HEADSHELL_HIT} />
+              <circle cx="292" cy="146.5" r="47" />
+            </svg>
+          </span>
+        </span>
       </button>
-      <span className="turntable__light" aria-hidden />
     </div>
   );
 }

@@ -1,128 +1,65 @@
-/* Medidas em % de uma base 460×380 (a mesma do viewBox do braço): o toca-discos escala com o espaço.
-   Luz única no canto superior esquerdo: brilhos em cima/esquerda, sombras para baixo/direita. */
+/* Vitrola a partir de uma foto (1250×1000): fundo sem o braço + braço recortado que gira + capa no selo.
+   Posições em % das coordenadas da foto, para escalar com o espaço disponível. Luz da foto: de cima/esquerda. */
 .turntable {
   position: relative;
   width: 100%;
-  max-width: calc((100vh - 120px) * 460 / 380);
-  aspect-ratio: 460 / 380;
-  border-radius: 18px;
-  /* Madeira fosca: veio em manchas largas e suaves, sem listras. */
-  background:
-    linear-gradient(135deg, var(--plinth-sheen), transparent 45%),
-    radial-gradient(ellipse 90% 9% at 28% 18%, var(--plinth-grain-a), transparent 70%),
-    radial-gradient(ellipse 120% 7% at 62% 47%, var(--plinth-grain-a), transparent 70%),
-    radial-gradient(ellipse 80% 10% at 45% 74%, var(--plinth-grain-b), transparent 70%),
-    radial-gradient(ellipse 100% 6% at 80% 92%, var(--plinth-grain-b), transparent 70%),
-    var(--plinth);
-  /* Chanfro: borda clara em cima/esquerda, escura embaixo/direita. */
-  box-shadow:
-    inset 2px 2px 0 var(--plinth-edge),
-    inset -2px -3px 0 var(--plinth-edge-dark),
-    inset 0 0 0 1px var(--plinth-edge-dark),
-    14px 26px 50px var(--shadow),
-    3px 6px 12px var(--shadow-soft);
+  max-width: calc((100vh - 120px) * 1250 / 1000);
+  aspect-ratio: 1250 / 1000;
   flex-shrink: 0;
+  filter: var(--turntable-filter);
+  user-select: none;
 }
 
-/* Prato: centro (190, 190), raio 171. O aro metálico escovado aparece sob a borda do disco. */
-.turntable__platter {
+.turntable__photo {
   position: absolute;
-  left: 4.13%;
-  top: 5%;
-  width: 74.35%;
-  aspect-ratio: 1;
-  border-radius: 50%;
-  background: conic-gradient(
-    from 200deg,
-    var(--metal-mid),
-    var(--metal-light) 12%,
-    var(--metal-mid) 25%,
-    var(--metal-dark) 50%,
-    var(--metal-mid) 62%,
-    var(--metal-light) 75%,
-    var(--metal-mid)
-  );
-  box-shadow:
-    6px 10px 18px var(--shadow),
-    inset 1px 1px 0 var(--metal-light);
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(12px 20px 24px var(--shadow));
 }
 
-/* Disco: borda clara, faixas lisas (entrada, intervalo, anel antes do selo) e sulcos finos. */
+/* Selo da foto: centro (518,5; 559,5), raio 116. */
 .turntable__record {
   position: absolute;
-  inset: 1.4%;
+  left: 32.2%;
+  top: 44.35%;
+  width: 18.56%;
+  aspect-ratio: 1;
   border-radius: 50%;
-  background:
-    radial-gradient(
-      circle closest-side,
-      transparent 0 36%,
-      var(--record-band) 36.5% 44%,
-      transparent 44.5% 68.6%,
-      var(--record-band) 68.8% 69.6%,
-      transparent 69.8% 93.5%,
-      var(--record-band) 94% 97.6%,
-      var(--record-edge) 98.4% 100%,
-      transparent 100%
-    ),
-    repeating-radial-gradient(circle closest-side, var(--record) 0 0.7px, var(--record-groove) 0.7px 1.4px),
-    var(--record);
-  box-shadow: 2px 3px 6px var(--shadow-soft);
   will-change: transform;
 }
 
 .turntable__label {
   position: absolute;
-  inset: 32%;
+  inset: 0;
   border-radius: 50%;
-  background: var(--label) center / cover no-repeat;
-  box-shadow: 0 0 0 2px var(--label-ring);
+  background: transparent center / cover no-repeat;
   /* Papel fosco: menos contraste e brilho que a capa original. */
-  filter: saturate(0.85) contrast(0.92) brightness(0.94);
+  filter: saturate(0.88) contrast(0.94) brightness(0.95);
 }
 
-.turntable__label::after {
+.turntable__label[style]::after {
   content: '';
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, var(--label-matte), transparent 70%);
-}
-
-/* Reflexos: camada separada, por cima do disco, que nunca gira. */
-.turntable__sheen {
-  position: absolute;
-  inset: 1.4%;
-  border-radius: 50%;
-  background: conic-gradient(
-    from 0deg,
-    transparent 0deg 285deg,
-    var(--record-reflection) 305deg,
-    var(--record-reflection-strong) 315deg,
-    var(--record-reflection) 325deg,
-    transparent 345deg
-  ),
-  conic-gradient(
-    from 0deg,
-    transparent 0deg 110deg,
-    var(--record-reflection) 128deg 140deg,
-    transparent 160deg
-  );
-  pointer-events: none;
+  background: radial-gradient(circle at 35% 30%, rgb(255 255 255 / 0.08), transparent 65%);
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.35), inset 0 0 6px rgb(0 0 0 / 0.35);
 }
 
 .turntable__spindle {
   position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 2.6%;
+  left: 41.48%;
+  top: 55.95%;
+  width: 1.15%;
   aspect-ratio: 1;
   transform: translate(-50%, -50%);
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, var(--metal-light), var(--metal-mid) 55%, var(--metal-dark));
-  box-shadow: 1px 2px 3px var(--shadow);
+  background: radial-gradient(circle at 35% 30%, #f4f4f4, #9a9a9a 55%, #4a4a4a);
+  box-shadow: 1px 2px 3px rgb(0 0 0 / 0.6);
 }
 
-/* Botão cobre a vitrola para o SVG usar o mesmo sistema de coordenadas; só o desenho do braço é clicável. */
+/* O botão cobre a vitrola só para posicionar; quem recebe o clique é a área desenhada do braço. */
 .turntable__arm {
   position: absolute;
   inset: 0;
@@ -136,144 +73,88 @@
   outline: none;
 }
 
-.tonearm {
-  display: block;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-}
-
-.tonearm__base,
-.tonearm__lift {
-  pointer-events: visiblePainted;
-  cursor: pointer;
-}
-
-.turntable__arm:disabled .tonearm__base,
-.turntable__arm:disabled .tonearm__lift {
-  cursor: not-allowed;
-}
-
-.turntable__arm:focus-visible .tonearm__swing {
-  filter: drop-shadow(0 0 2px var(--focus)) drop-shadow(0 0 2px var(--focus));
-}
-
-.tonearm__base {
-  filter: drop-shadow(3px 4px 3px var(--shadow));
-}
-
-.tonearm__plate {
-  fill: var(--arm-base);
-  stroke: var(--metal-dark);
-  stroke-width: 0.6;
-}
-
-.tonearm__notch,
-.tonearm__cap,
-.tonearm__connector {
-  fill: var(--arm-base);
-}
-
-.tonearm__scale {
-  stroke: var(--metal-dark);
-  stroke-width: 0.6;
-  opacity: 0.7;
-}
-
-.tonearm__tube-edge,
-.tonearm__tube,
-.tonearm__tube-shine,
-.tonearm__finger {
-  fill: none;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.tonearm__tube-edge {
-  stroke: var(--metal-dark);
-  stroke-width: 6;
-}
-
-.tonearm__tube {
-  stroke: var(--metal-mid);
-  stroke-width: 5.5;
-}
-
-.tonearm__tube-shine {
-  stroke: var(--metal-light);
-  stroke-width: 1.8;
-}
-
-.tonearm__collar {
-  stroke: var(--arm-base);
-  stroke-width: 1.5;
-}
-
-.tonearm__finger {
-  stroke: var(--metal-mid);
-  stroke-width: 2;
-}
-
-.tonearm__cartridge {
-  fill: var(--cartridge);
-  stroke: var(--metal-dark);
-  stroke-width: 0.6;
-}
-
-.tonearm__grille {
-  fill: var(--cartridge-dots);
-}
-
-/* Giro pelo centro da base (412, 52). Tocando: gira primeiro, depois desce.
-   Parando: sobe primeiro, depois volta. A transição usada é a do estado de destino. */
+/* Recorte do braço: caixa (724, 201) 384×633; eixo de giro no centro da torre (1016; 347,5). */
+.tonearm__lift,
 .tonearm__swing {
-  transform-box: view-box;
-  transform-origin: 412px 52px;
-  transform: rotate(0deg);
-  transition: transform 0.9s cubic-bezier(0.45, 0, 0.25, 1) 0.3s;
-}
-
-.turntable--playing .tonearm__swing {
-  transform: rotate(20deg);
-  transition-delay: 0s;
+  position: absolute;
+  display: block;
+  transform-origin: 76.04% 23.14%;
 }
 
 .tonearm__lift {
-  transform-box: view-box;
-  transform-origin: 412px 52px;
-  filter: drop-shadow(7px 10px 4px var(--shadow));
+  left: 57.92%;
+  top: 20.1%;
+  width: 30.72%;
+  height: 63.3%;
+  /* Agulha levantada: sombra mais longa. */
+  filter: drop-shadow(7px 10px 6px rgb(0 0 0 / 0.45));
   transition:
     transform 0.3s ease-out,
     filter 0.3s ease-out;
 }
 
+.tonearm__swing {
+  inset: 0;
+  transform: rotate(-14deg);
+  /* Parando: a agulha sobe primeiro (0,3 s), depois o braço volta para o descanso. */
+  transition: transform 0.9s cubic-bezier(0.45, 0, 0.25, 1) 0.3s;
+}
+
+/* Tocando: o braço vai até o disco e, depois, a agulha desce (sombra curta). */
+.turntable--playing .tonearm__swing {
+  transform: rotate(0deg);
+  transition-delay: 0s;
+}
+
 .turntable--playing .tonearm__lift {
-  transform: scale(0.985);
-  filter: drop-shadow(3px 4px 2px var(--shadow));
+  transform: scale(0.992);
+  filter: drop-shadow(3px 4px 2px rgb(0 0 0 / 0.5));
   transition-delay: 0.9s;
 }
 
-.turntable__light {
+.tonearm__photo {
   position: absolute;
-  left: 3%;
-  bottom: 3.4%;
-  width: 1.5%;
-  aspect-ratio: 1;
-  border-radius: 50%;
-  background: var(--led-off);
-  box-shadow: inset 1px 1px 1px var(--shadow-soft);
-  transition: background 0.3s, box-shadow 0.3s;
+  inset: 0;
+  width: 100%;
+  height: 100%;
 }
 
-.turntable--playing .turntable__light {
-  background: var(--led-on);
-  box-shadow: 0 0 8px var(--led-on);
+.tonearm__hit {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.tonearm__hit path {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 42;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: stroke;
+  cursor: pointer;
+}
+
+.tonearm__hit polygon,
+.tonearm__hit circle {
+  fill: transparent;
+  pointer-events: fill;
+  cursor: pointer;
+}
+
+.turntable__arm:disabled .tonearm__hit * {
+  cursor: not-allowed;
+}
+
+.turntable__arm:focus-visible .tonearm__photo {
+  filter: drop-shadow(0 0 3px var(--focus)) drop-shadow(0 0 3px var(--focus));
 }
 
 @media (prefers-reduced-motion: reduce) {
   .tonearm__swing,
-  .tonearm__lift,
-  .turntable__light {
+  .tonearm__lift {
     transition: none;
   }
 }

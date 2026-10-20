@@ -38,9 +38,45 @@ async function playWithFallback(body?: object): Promise<void> {
   }
 }
 
-// Toca um álbum ou playlist a partir da primeira faixa.
-export function playDisc(contextUri: string): Promise<void> {
-  return playWithFallback({ context_uri: contextUri });
+// Dispositivo ativo ou, se nenhum estiver ativo, o primeiro disponível.
+async function pickDevice(): Promise<string> {
+  const devices = (await getDevices()).filter((d) => !d.isRestricted);
+  const device = devices.find((d) => d.isActive) ?? devices[0];
+  if (!device) throw new SpotifyError('no-device');
+  return device.id;
+}
+
+function shuffleOff(deviceId: string): Promise<Response> {
+  const params = new URLSearchParams({ state: 'false', device_id: deviceId });
+  return spotifyFetch(`/me/player/shuffle?${params}`, { method: 'PUT' });
+}
+
+async function shuffleIsOn(): Promise<boolean> {
+  const res = await spotifyFetch('/me/player');
+  if (res.status === 204) return false;
+  return ((await res.json()) as { shuffle_state?: boolean }).shuffle_state === true;
+}
+
+// Toca um álbum ou playlist da faixa 1, em ordem: o Spotify guarda o aleatório do último uso,
+// então desliga antes e depois do play (o play pode reativar) e confere no fim.
+export async function playDisc(contextUri: string): Promise<void> {
+  const deviceId = await pickDevice();
+  try {
+    await shuffleOff(deviceId);
+  } catch (error) {
+    // Dispositivo ocioso pode recusar antes do play; o passo depois do play resolve.
+    if (!isNoDevice(error)) throw error;
+  }
+  await spotifyFetch(`/me/player/play?${new URLSearchParams({ device_id: deviceId })}`, {
+    method: 'PUT',
+    headers: JSON_HEADERS,
+    body: JSON.stringify({ context_uri: contextUri, offset: { position: 0 }, position_ms: 0 }),
+  });
+  await shuffleOff(deviceId);
+  if (await shuffleIsOn()) {
+    console.warn('Spotify: aleatório continuou ligado depois do play; tentando desligar de novo.', { deviceId, contextUri });
+    await shuffleOff(deviceId);
+  }
 }
 
 export function resume(): Promise<void> {
