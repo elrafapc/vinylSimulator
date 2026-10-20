@@ -27,3 +27,30 @@
 - Decisão: a UI só chama funções de src/spotify/ (playAlbum, pause, getNowPlaying...).
 - Alternativas: interface genérica de "fonte de música" — abstração antecipada.
 - Consequência: nova fonte entra ao lado, sem reescrever a UI.
+
+## ADR-005 — Busca limitada a 10 resultados
+- Data: 2026-10-20
+- Contexto: em Development Mode o Spotify limita `/search` a no máximo 10 itens por página.
+- Decisão: `searchAlbums` usa `limit=10`, sem paginação.
+- Alternativas: paginar com `offset` — desnecessário para escolher um disco.
+- Consequência: buscas genéricas exigem termos mais específicos.
+
+## ADR-006 — Sem dispositivo ativo, acordar o primeiro disponível
+- Data: 2026-10-20
+- Contexto: com o Spotify aberto mas ocioso, `/me/player/play` retorna 404 NO_ACTIVE_DEVICE.
+- Decisão: `playAlbum`/`resume` tentam de novo com `device_id` do primeiro dispositivo não restrito; sem nenhum, mostram "Abra o Spotify em algum dispositivo".
+- Alternativas: sempre exibir erro — pior experiência no caso mais comum.
+- Consequência: pode tocar num dispositivo inesperado se houver vários abertos.
+
+## ADR-007 — Trocar de disco levanta a agulha
+- Data: 2026-10-20
+- Contexto: selecionar outro álbum enquanto um toca.
+- Decisão: selecionar um álbum diferente pausa a reprodução; tocar o novo exige baixar a agulha.
+- Alternativas: tocar imediatamente ao selecionar — perde o ritual do vinil.
+- Consequência: um clique a mais, intencional.
+
+## ADR-008 — Testes rodam com `--no-experimental-webstorage`
+- Data: 2026-10-20
+- Contexto: Node 22+ expõe um `localStorage` nativo que sobrepõe o do jsdom e quebra os testes.
+- Decisão: `vite.config.ts` passa a flag aos workers do Vitest.
+- Consequência: nenhuma no app; só afeta o ambiente de testes.

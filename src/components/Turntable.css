@@ -1,0 +1,156 @@
+.turntable {
+  --plinth: #2a211b;
+  position: relative;
+  width: 460px;
+  height: 380px;
+  border-radius: 18px;
+  background:
+    linear-gradient(160deg, rgb(255 255 255 / 0.06), transparent 40%),
+    repeating-linear-gradient(95deg, #3a2d24 0 3px, #33281f 3px 7px),
+    var(--plinth);
+  box-shadow:
+    0 30px 60px rgb(0 0 0 / 0.55),
+    inset 0 1px 0 rgb(255 255 255 / 0.12);
+  flex-shrink: 0;
+}
+
+.turntable__platter {
+  position: absolute;
+  left: 30px;
+  top: 30px;
+  width: 320px;
+  height: 320px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #555 0 60%, #3a3a3a 61% 100%);
+  box-shadow: 0 6px 18px rgb(0 0 0 / 0.6);
+}
+
+/* Reflexo fixo por cima do disco: só o disco gira, a luz fica parada. */
+.turntable__platter::after {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 30deg,
+    transparent 0deg,
+    rgb(255 255 255 / 0.09) 25deg,
+    transparent 55deg,
+    transparent 180deg,
+    rgb(255 255 255 / 0.06) 205deg,
+    transparent 235deg
+  );
+  pointer-events: none;
+}
+
+.turntable__record {
+  position: absolute;
+  inset: 6px;
+  border-radius: 50%;
+  background:
+    repeating-radial-gradient(circle, #121212 0 1.5px, #1d1d1d 1.5px 3px);
+  animation: turntable-spin 1.8s linear infinite;
+  animation-play-state: paused;
+}
+
+.turntable--playing .turntable__record {
+  animation-play-state: running;
+}
+
+.turntable__label {
+  position: absolute;
+  inset: 32%;
+  border-radius: 50%;
+  background: #b5452f center / cover no-repeat;
+  box-shadow: 0 0 0 3px #0c0c0c;
+}
+
+.turntable__spindle {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  margin: -5px 0 0 -5px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #eee, #888);
+}
+
+.turntable__pivot {
+  position: absolute;
+  left: 380px;
+  top: 30px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #d8d8d8, #6d6d6d);
+  box-shadow: 0 4px 10px rgb(0 0 0 / 0.5);
+}
+
+.turntable__arm {
+  position: absolute;
+  left: 396px;
+  top: 50px;
+  width: 8px;
+  height: 260px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #9a9a9a, #e6e6e6 45%, #8a8a8a);
+  transform-origin: 50% 0;
+  transform: rotate(0deg);
+  transition: transform 0.9s cubic-bezier(0.45, 0, 0.25, 1);
+  cursor: pointer;
+  box-shadow: 4px 6px 8px rgb(0 0 0 / 0.4);
+}
+
+.turntable--playing .turntable__arm {
+  transform: rotate(25deg);
+}
+
+.turntable__arm:disabled {
+  cursor: not-allowed;
+}
+
+.turntable__arm:focus-visible {
+  outline: 2px solid #f0c674;
+  outline-offset: 4px;
+}
+
+.turntable__head {
+  position: absolute;
+  left: -7px;
+  bottom: -18px;
+  width: 22px;
+  height: 30px;
+  border-radius: 3px;
+  background: linear-gradient(#3b3b3b, #1b1b1b);
+}
+
+.turntable__light {
+  position: absolute;
+  left: 30px;
+  bottom: 14px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #4a2a22;
+  transition: background 0.3s, box-shadow 0.3s;
+}
+
+.turntable--playing .turntable__light {
+  background: #ff5a3c;
+  box-shadow: 0 0 8px #ff5a3c;
+}
+
+@keyframes turntable-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .turntable__record {
+    animation: none;
+  }
+}
