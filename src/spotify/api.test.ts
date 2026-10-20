@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { getDevices, getMe, searchAlbums, spotifyFetch } from './api';
+import { getDevices, getDiscTracks, getMe, getMyPlaylists, parseDiscUri, searchDiscs, spotifyFetch } from './api';
 import { SpotifyError } from './errors';
 
 vi.mock('./auth', () => ({
@@ -47,12 +47,45 @@ describe('api', () => {
         },
       }),
     );
-    const albums = await searchAlbums('Kind of Blue');
-    expect(albums).toEqual([
-      { id: 'a1', uri: 'spotify:album:a1', name: 'Kind of Blue', artist: 'Miles Davis', imageUrl: 'mid' },
+    const discs = await searchDiscs('Kind of Blue');
+    expect(discs).toEqual([
+      { id: 'a1', uri: 'spotify:album:a1', kind: 'album', name: 'Kind of Blue', artist: 'Miles Davis', imageUrl: 'mid' },
     ]);
     expect(fetchMock.mock.calls[0][0]).toContain('q=Kind+of+Blue');
-    expect(fetchMock.mock.calls[0][0]).toContain('type=album');
+    expect(fetchMock.mock.calls[0][0]).toContain('type=album%2Cplaylist');
+  });
+
+  it('busca playlists junto, depois dos álbuns', async () => {
+    fetchMock.mockResolvedValue(
+      json({
+        albums: { items: [{ id: 'a1', uri: 'spotify:album:a1', name: 'A', artists: [{ name: 'X' }], images: [] }] },
+        playlists: {
+          items: [
+            null,
+            { id: 'p1', uri: 'spotify:playlist:p1', name: 'Jazz para trabalhar', owner: { display_name: 'Rafael' }, images: null },
+          ],
+        },
+      }),
+    );
+    expect(await searchDiscs('jazz')).toEqual([
+      { id: 'a1', uri: 'spotify:album:a1', kind: 'album', name: 'A', artist: 'X', imageUrl: undefined },
+      { id: 'p1', uri: 'spotify:playlist:p1', kind: 'playlist', name: 'Jazz para trabalhar', artist: 'Rafael', imageUrl: undefined },
+    ]);
+  });
+
+  it('lista minhas playlists como discos', async () => {
+    fetchMock.mockResolvedValue(
+      json({
+        items: [
+          { id: 'p1', uri: 'spotify:playlist:p1', name: 'Foco', owner: { display_name: 'Rafael' }, images: [{ url: 'img', width: 300 }] },
+          null,
+        ],
+      }),
+    );
+    expect(await getMyPlaylists()).toEqual([
+      { id: 'p1', uri: 'spotify:playlist:p1', kind: 'playlist', name: 'Foco', artist: 'Rafael', imageUrl: 'img' },
+    ]);
+    expect(fetchMock.mock.calls[0][0]).toBe('https://api.spotify.com/v1/me/playlists?limit=50');
   });
 
   it('lista dispositivos ignorando os sem id', async () => {
@@ -67,6 +100,49 @@ describe('api', () => {
     expect(await getDevices()).toEqual([
       { id: 'd1', name: 'Mac', type: 'Computer', isActive: true, isRestricted: false },
     ]);
+  });
+
+  it('identifica álbum e playlist pelo uri', () => {
+    expect(parseDiscUri('spotify:album:a1')).toEqual({ kind: 'album', id: 'a1' });
+    expect(parseDiscUri('spotify:playlist:p1')).toEqual({ kind: 'playlist', id: 'p1' });
+    expect(parseDiscUri('spotify:user:u1:collection')).toBeNull();
+    expect(parseDiscUri(undefined)).toBeNull();
+  });
+
+  it('faixas do álbum via GET /albums/{id}', async () => {
+    fetchMock.mockResolvedValue(
+      json({
+        tracks: {
+          items: [{ id: 't1', track_number: 1, name: 'So What', duration_ms: 545000, artists: [{ name: 'Miles Davis' }] }],
+        },
+      }),
+    );
+    expect(await getDiscTracks('spotify:album:a1')).toEqual([
+      { id: 't1', number: 1, name: 'So What', artist: 'Miles Davis', durationMs: 545000 },
+    ]);
+    expect(fetchMock.mock.calls[0][0]).toBe('https://api.spotify.com/v1/albums/a1');
+  });
+
+  it('faixas da playlist via /items, numeradas pela posição', async () => {
+    fetchMock.mockResolvedValue(
+      json({
+        items: [
+          { item: { id: 't1', name: 'A', duration_ms: 1000, artists: [{ name: 'X' }] } },
+          null,
+          { track: { id: 't2', name: 'B', duration_ms: 2000 } },
+        ],
+      }),
+    );
+    expect(await getDiscTracks('spotify:playlist:p1')).toEqual([
+      { id: 't1', number: 1, name: 'A', artist: 'X', durationMs: 1000 },
+      { id: 't2', number: 2, name: 'B', artist: '', durationMs: 2000 },
+    ]);
+    expect(fetchMock.mock.calls[0][0]).toBe('https://api.spotify.com/v1/playlists/p1/items?limit=50');
+  });
+
+  it('playlist de outra pessoa lança erro', async () => {
+    fetchMock.mockResolvedValue(json({ error: { status: 403, message: 'Forbidden' } }, 403));
+    await expect(getDiscTracks('spotify:playlist:p9')).rejects.toMatchObject({ status: 403 });
   });
 
   it('converte falha de rede em erro claro', async () => {

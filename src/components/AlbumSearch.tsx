@@ -1,17 +1,23 @@
 import { useEffect, useState } from 'react';
-import { searchAlbums, type Album } from '../spotify/api';
+import { searchDiscs, type Disc } from '../spotify/api';
 import { errorMessage } from '../spotify/errors';
+import { PlayOverlay } from './PlayOverlay';
 
 const DEBOUNCE_MS = 350;
 
 interface AlbumSearchProps {
   selectedId?: string;
-  onSelect: (album: Album) => void;
+  favoriteIds?: Set<string>;
+  onSelect: (disc: Disc) => void;
+  onToggleFavorite?: (disc: Disc) => void;
+  /** Mostra o botão play sobre a capa do disco selecionado. */
+  onPlay?: () => void;
+  playingId?: string;
 }
 
-export function AlbumSearch({ selectedId, onSelect }: AlbumSearchProps) {
+export function AlbumSearch({ selectedId, favoriteIds, onSelect, onToggleFavorite, onPlay, playingId }: AlbumSearchProps) {
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState<Album[]>([]);
+  const [results, setResults] = useState<Disc[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -22,9 +28,9 @@ export function AlbumSearch({ selectedId, onSelect }: AlbumSearchProps) {
     const id = setTimeout(async () => {
       setLoading(true);
       try {
-        const albums = await searchAlbums(q);
+        const discs = await searchDiscs(q);
         if (cancelled) return;
-        setResults(albums);
+        setResults(discs);
         setError(null);
       } catch (e) {
         if (!cancelled) setError(errorMessage(e));
@@ -48,7 +54,7 @@ export function AlbumSearch({ selectedId, onSelect }: AlbumSearchProps) {
       <input
         type="search"
         className="album-search__input"
-        placeholder="Buscar álbum ou artista…"
+        placeholder="Buscar álbum, artista ou playlist…"
         aria-label="Buscar álbum"
         value={query}
         onChange={(e) => handleChange(e.target.value)}
@@ -56,20 +62,37 @@ export function AlbumSearch({ selectedId, onSelect }: AlbumSearchProps) {
       {loading && <p className="album-search__status">Procurando na estante…</p>}
       {error && <p className="album-search__status album-search__status--error">{error}</p>}
       <ul className="album-search__list">
-        {results.map((album) => (
-          <li key={album.id}>
+        {results.map((disc) => (
+          <li key={disc.id} className="album-search__row">
             <button
               type="button"
-              className={`album-search__item${album.id === selectedId ? ' album-search__item--selected' : ''}`}
-              aria-pressed={album.id === selectedId}
-              onClick={() => onSelect(album)}
+              className={`album-search__item${disc.id === selectedId ? ' album-search__item--selected' : ''}`}
+              aria-pressed={disc.id === selectedId}
+              onClick={() => onSelect(disc)}
             >
-              {album.imageUrl ? <img src={album.imageUrl} alt="" width={48} height={48} /> : <span className="album-search__nocover" />}
+              {disc.imageUrl ? <img src={disc.imageUrl} alt="" width={48} height={48} /> : <span className="album-search__nocover" />}
               <span className="album-search__text">
-                <strong>{album.name}</strong>
-                <span>{album.artist}</span>
+                <strong>{disc.name}</strong>
+                <span>
+                  {disc.kind === 'playlist' && <em className="album-search__badge">Playlist</em>}
+                  {disc.artist}
+                </span>
               </span>
             </button>
+            {onPlay && disc.id === selectedId && (
+              <PlayOverlay discName={disc.name} playing={disc.id === playingId} onPlay={onPlay} />
+            )}
+            {onToggleFavorite && (
+              <button
+                type="button"
+                className="album-search__fav"
+                aria-label={favoriteIds?.has(disc.id) ? `Remover ${disc.name} da estante` : `Guardar ${disc.name} na estante`}
+                aria-pressed={favoriteIds?.has(disc.id) ?? false}
+                onClick={() => onToggleFavorite(disc)}
+              >
+                {favoriteIds?.has(disc.id) ? '★' : '☆'}
+              </button>
+            )}
           </li>
         ))}
       </ul>

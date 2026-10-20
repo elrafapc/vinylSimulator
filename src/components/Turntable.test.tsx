@@ -1,6 +1,6 @@
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Turntable } from './Turntable';
 
 describe('Turntable', () => {
@@ -35,5 +35,78 @@ describe('Turntable', () => {
     render(<Turntable playing={false} onNeedleClick={onNeedleClick} />);
     await userEvent.click(screen.getByTestId('tonearm'));
     expect(onNeedleClick).toHaveBeenCalledOnce();
+  });
+
+  it('braço em SVG com base, contrapeso, haste e cápsula', () => {
+    render(<Turntable playing={false} />);
+    const arm = screen.getByTestId('tonearm');
+    for (const part of ['base', 'counterweight', 'tube', 'cartridge']) {
+      expect(arm.querySelector(`svg .tonearm__${part}`)).not.toBeNull();
+    }
+  });
+
+  it('reflexo fica fora do disco que gira', () => {
+    render(<Turntable playing />);
+    expect(screen.getByTestId('record')).not.toContainElement(screen.getByTestId('sheen'));
+  });
+
+  describe('giro do prato', () => {
+    let frames = new Map<number, (now: number) => void>();
+    let nextId = 1;
+    let now = 0;
+
+    function setup(reducedMotion = false) {
+      frames = new Map();
+      now = 0;
+      vi.stubGlobal('requestAnimationFrame', (cb: (now: number) => void) => {
+        frames.set(nextId, cb);
+        return nextId++;
+      });
+      vi.stubGlobal('cancelAnimationFrame', (id: number) => frames.delete(id));
+      vi.stubGlobal('matchMedia', () => ({ matches: reducedMotion }));
+    }
+
+    // Avança o relógio quadro a quadro (60 fps).
+    function advance(seconds: number) {
+      act(() => {
+        for (let t = 0; t < seconds * 60 && frames.size; t++) {
+          const pending = [...frames.values()];
+          frames.clear();
+          pending.forEach((cb) => cb(now));
+          now += 1000 / 60;
+        }
+      });
+    }
+
+    const angle = () => Number(/rotate\(([\d.]+)deg\)/.exec(screen.getByTestId('record').style.transform)?.[1] ?? 0);
+
+    afterEach(() => vi.unstubAllGlobals());
+
+    it('só gira depois de a agulha descer, acelera e para aos poucos', () => {
+      setup();
+      const { rerender } = render(<Turntable playing />);
+      advance(1.1);
+      expect(angle()).toBe(0);
+
+      advance(0.5);
+      const early = angle();
+      advance(0.5);
+      const accelerating = angle() - early;
+      expect(accelerating).toBeGreaterThan(early);
+
+      rerender(<Turntable playing={false} />);
+      const atStop = angle();
+      advance(0.5);
+      expect(angle()).not.toBe(atStop);
+      advance(2);
+      expect(frames.size).toBe(0);
+    });
+
+    it('com movimento reduzido, não gira', () => {
+      setup(true);
+      render(<Turntable playing />);
+      advance(3);
+      expect(screen.getByTestId('record').style.transform).toBe('');
+    });
   });
 });

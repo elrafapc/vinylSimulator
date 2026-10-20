@@ -56,31 +56,82 @@ Legenda: [ ] pendente · [~] em andamento · [x] feita · ∥ pode rodar em para
 ## Fase 4 — Pós-MVP
 
 * [ ]  T10 — Tema light/dark (FAZER ANTES DA T05)
+
   * Arquivos: `src/theme/theme.css`, `src/theme/useTheme.ts`, `useTheme.test.ts`, `src/components/ThemeToggle.tsx`
   * Depende de: T01
   * Aceite: cores só via variáveis CSS; botão alterna light/dark; segue o sistema na 1ª visita; escolha persiste ao recarregar
 * [ ]  T11 — Ruído de agulha (crackle) gerado via Web Audio, sem arquivo de áudio
+
   * Arquivos: `src/audio/crackle.ts`, `crackle.test.ts`, `src/components/CrackleControl.tsx`
   * Depende de: T08
   * Aceite: crackle toca só com agulha baixada e música tocando; para no pause; botão on/off + volume; preferência persiste
 * [ ]  T12 — Playlist como disco (busca retorna álbuns e playlists; baixar agulha toca qualquer um)
+
   * Arquivos: `src/spotify/player.ts`, `src/spotify/api.ts`, `src/components/AlbumSearch.tsx`
   * Depende de: T07
   * Aceite: buscar playlist → selecionar → baixar agulha → toca no Spotify
 * [ ]  T13 — Favoritos (salvar/remover disco) em localStorage
+
   * Arquivos: `src/library/favorites.ts`, `favorites.test.ts`, `src/components/AlbumSearch.tsx`
   * Depende de: T12
   * Aceite: favoritar na busca → persiste ao recarregar; remover funciona; UI não acessa localStorage direto
 * [ ]  T14 — Estante de vinis (lombadas/capas na prateleira; clicar coloca no toca-discos)
+
   * Arquivos: `src/components/Shelf.tsx`, `Shelf.css`, `Shelf.test.tsx`, `src/App.tsx`
   * Depende de: T13, T10
   * Aceite: favoritos aparecem na estante; clicar seleciona o disco; estante vazia mostra mensagem
 * [ ]  T15 — (Opcional) Importar minhas playlists do Spotify para a estante
+
   * Arquivos: `src/spotify/api.ts`, `src/components/Shelf.tsx`
   * Depende de: T14
   * Aceite: botão "Importar do Spotify" lista minhas playlists e adiciona as escolhidas aos favoritos
 
----
+- [ ]  T16 — Volume do Spotify (slider que aumenta/abaixa o volume da música)
+  - Arquivos: `src/spotify/player.ts`, `player.test.ts`, `src/components/VolumeControl.tsx`, `VolumeControl.test.tsx`
+  - Depende de: T08
+  - Aceite: slider inicia com o volume atual do dispositivo; mover altera o volume no Spotify (envio com debounce ~300ms); se o dispositivo não suportar volume remoto, slider desabilitado com aviso
+
+
+- [ ]  T17 — Botão play sobre o disco selecionado (na busca, estante e minhas playlists)
+  - Arquivos: `src/components/PlayOverlay.tsx`, `PlayOverlay.test.tsx`, componentes de lista
+  - Depende de: T07
+  - Aceite: item selecionado mostra botão play sobre a capa; clicar dispara a mesma ação de "baixar agulha"; acessível por teclado (Enter/Espaço)
+
+## Fase 5 — Layout e experiência
+
+- [ ]  T18 — Layout: toca-discos ocupa a maior parte da tela + menu lateral recolhível
+
+  - Depende de: T10
+  - Aceite: toca-discos ocupa ~70% da largura e escala com a tela; todas as opções (busca, controles, volume, sons, estante, playlists) no menu lateral; botão recolhe/expande e o toca-discos cresce ao recolher; estado persiste; funciona em light e dark
+- [ ]  T19 — Estante maior: painel amplo que abre pelo menu lateral
+
+  - Depende de: T18
+  - Aceite: abre como painel grande sobre a tela (fecha com Esc ou clique fora); capas grandes em prateleiras; clicar coloca o disco no toca-discos e fecha o painel
+- [ ]  T20 — Detalhes do disco: ícone pequeno abaixo do toca-discos expande capa + faixas
+
+  - Depende de: T18
+  - Aceite: ícone com capa em miniatura; clicar expande capa grande + faixas (número, nome, duração) com a atual destacada; álbum via GET /albums/{id}; playlist que não é minha mostra só a capa com aviso "faixas indisponíveis"
+- [ ]  T21 — Sons ambiente: chuva e lareira, além do ruído de agulha
+
+  - Depende de: T11
+  - Aceite: agulha, chuva e lareira com liga/desliga e volume independentes; podem tocar juntos; agulha só com música tocando; chuva e lareira independentes da música; preferências persistem
+- [ ]  T22 — Sugestão de álbum baseada na estante
+
+  - Depende de: T19 + decisão da fonte (Last.fm ou Claude API)
+  - Aceite: botão lê a estante e sugere 1 álbum que não está nela, com capa, nome, artista e 1 frase de motivo; botões "Tocar" e "Adicionar à estante"; "Outra sugestão" gera nova
+- [ ]  T23 — Botão tela cheia (esconde barra do navegador)
+
+  - Depende de: T18
+  - Aceite: botão no menu lateral e atalho "F" alternam tela cheia via Fullscreen API; ícone muda conforme o estado; sair com Esc atualiza o ícone; menu lateral continua recolhível em tela cheia
+- [ ]  T24 — Instalar como app (PWA)
+
+  - Depende de: T18
+  - Aceite: manifest com nome, ícone de vinil e display "standalone"; Chrome/Edge mostram opção "Instalar"; app instalado abre em janela própria sem barra de endereço; login Spotify continua funcionando no app instalado
+- [~]  T25 — Realismo da vitrola (braço, disco, base e movimento)
+
+  - Depende de: T18
+  - Aceite: braço com base giratória, contrapeso e cápsula, girando a partir do pivô até o disco ao tocar; reflexos fixos sobre o disco girando; base em madeira fosca sem listras; prato acelera/desacelera; light e dark revisados; testes d
+    o Turntable passam
 
 ## Prompt padrão (uma task por sessão, /clear entre tasks)
 

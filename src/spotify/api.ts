@@ -3,10 +3,15 @@ import { SpotifyError } from './errors';
 
 const BASE_URL = 'https://api.spotify.com/v1';
 
-export interface Album {
+export type DiscKind = 'album' | 'playlist';
+
+// Qualquer coisa que pode ir para o toca-discos: um álbum ou uma playlist.
+export interface Disc {
   id: string;
   uri: string;
+  kind: DiscKind;
   name: string;
+  /** Artista do álbum ou dono da playlist. */
   artist: string;
   imageUrl?: string;
 }
@@ -81,7 +86,7 @@ export async function getMe(): Promise<User> {
 }
 
 interface SearchResponse {
-  albums: {
+  albums?: {
     items: Array<{
       id: string;
       uri: string;
@@ -90,20 +95,123 @@ interface SearchResponse {
       images: SpotifyImage[];
     } | null>;
   };
+  playlists?: {
+    items: Array<{
+      id: string;
+      uri: string;
+      name: string;
+      owner: { display_name: string | null };
+      images: SpotifyImage[] | null;
+    } | null>;
+  };
 }
 
-export async function searchAlbums(query: string, limit = 10): Promise<Album[]> {
-  const params = new URLSearchParams({ q: query, type: 'album', limit: String(limit) });
+export async function searchDiscs(query: string, limit = 10): Promise<Disc[]> {
+  const params = new URLSearchParams({ q: query, type: 'album,playlist', limit: String(limit) });
   const data = (await (await spotifyFetch(`/search?${params}`)).json()) as SearchResponse;
-  return data.albums.items
+  const albums: Disc[] = (data.albums?.items ?? [])
     .filter((item) => item !== null)
     .map((item) => ({
       id: item.id,
       uri: item.uri,
+      kind: 'album',
       name: item.name,
       artist: item.artists.map((a) => a.name).join(', '),
       imageUrl: pickImage(item.images),
     }));
+  const playlists: Disc[] = (data.playlists?.items ?? [])
+    .filter((item) => item !== null)
+    .map((item) => ({
+      id: item.id,
+      uri: item.uri,
+      kind: 'playlist',
+      name: item.name,
+      artist: item.owner.display_name ?? '',
+      imageUrl: pickImage(item.images ?? undefined),
+    }));
+  return [...albums, ...playlists];
+}
+
+interface PlaylistsResponse {
+  items: Array<{
+    id: string;
+    uri: string;
+    name: string;
+    owner: { display_name: string | null };
+    images: SpotifyImage[] | null;
+  } | null>;
+}
+
+export async function getMyPlaylists(limit = 50): Promise<Disc[]> {
+  const params = new URLSearchParams({ limit: String(limit) });
+  const data = (await (await spotifyFetch(`/me/playlists?${params}`)).json()) as PlaylistsResponse;
+  return data.items
+    .filter((item) => item !== null)
+    .map((item) => ({
+      id: item.id,
+      uri: item.uri,
+      kind: 'playlist',
+      name: item.name,
+      artist: item.owner.display_name ?? '',
+      imageUrl: pickImage(item.images ?? undefined),
+    }));
+}
+
+export interface Track {
+  id: string;
+  number: number;
+  name: string;
+  artist: string;
+  durationMs: number;
+}
+
+interface TrackItem {
+  id: string | null;
+  name: string;
+  duration_ms: number;
+  artists?: Array<{ name: string }>;
+}
+
+function toTrack(item: TrackItem, number: number): Track {
+  return {
+    id: item.id ?? '',
+    number,
+    name: item.name,
+    artist: item.artists?.map((a) => a.name).join(', ') ?? '',
+    durationMs: item.duration_ms,
+  };
+}
+
+// "spotify:album:ID" → { kind: 'album', id: 'ID' }; outros contextos (ex.: Curtidas) → null.
+export function parseDiscUri(uri: string | undefined): { kind: DiscKind; id: string } | null {
+  const [scheme, kind, id] = uri?.split(':') ?? [];
+  if (scheme !== 'spotify' || !id || (kind !== 'album' && kind !== 'playlist')) return null;
+  return { kind, id };
+}
+
+interface AlbumResponse {
+  tracks: { items: Array<TrackItem & { track_number: number }> };
+}
+
+interface PlaylistItemsResponse {
+  items: Array<{ item?: TrackItem | null; track?: TrackItem | null } | null>;
+}
+
+// Álbum via GET /albums/{id}; playlist via /items (só funciona para playlists minhas ou colaborativas).
+export async function getDiscTracks(uri: string): Promise<Track[]> {
+  const ref = parseDiscUri(uri);
+  if (!ref) throw new SpotifyError('unknown', undefined, 'Faixas indisponíveis.');
+  if (ref.kind === 'album') {
+    const data = (await (await spotifyFetch(`/albums/${encodeURIComponent(ref.id)}`)).json()) as AlbumResponse;
+    return data.tracks.items.map((item) => toTrack(item, item.track_number));
+  }
+  const params = new URLSearchParams({ limit: '50' });
+  const res = await spotifyFetch(`/playlists/${encodeURIComponent(ref.id)}/items?${params}`);
+  const data = (await res.json()) as PlaylistItemsResponse;
+  return data.items
+    .map((entry) => entry?.item ?? entry?.track ?? null)
+    .filter((item) => item !== null)
+    .map((item, index) => toTrack(item, index + 1));
 }
 
 interface DevicesResponse {

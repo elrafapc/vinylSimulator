@@ -4,12 +4,12 @@
 Ouvir música trabalhando sem distração (YouTube, notificações), com a experiência ritual do vinil e sem o custo de vitrola/discos. Usuário: Rafael (uso pessoal).
 
 ## MVP (precisa existir)
-- [ ] Login Spotify (OAuth PKCE, conta Premium)
-- [ ] Buscar e selecionar um álbum
-- [ ] Ação "baixar agulha" inicia o álbum no Spotify (Web API, dispositivo ativo)
-- [ ] Disco gira enquanto toca; agulha levanta/para no pause
-- [ ] Controles: play/pause, faixa anterior/próxima
-- [ ] Exibir faixa e artista atuais (sincronizados com o Spotify)
+- [x] Login Spotify (OAuth PKCE, conta Premium)
+- [x] Buscar e selecionar um álbum
+- [x] Ação "baixar agulha" inicia o álbum no Spotify (Web API, dispositivo ativo)
+- [x] Disco gira enquanto toca; agulha levanta/para no pause
+- [x] Controles: play/pause, faixa anterior/próxima
+- [x] Exibir faixa e artista atuais (sincronizados com o Spotify)
 
 ## Fora de escopo (agora)
 - Áudio no navegador (Web Playback SDK)

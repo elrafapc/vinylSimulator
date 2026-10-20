@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { getNowPlaying, next, pause, playAlbum, prev, resume } from './player';
+import { getNowPlaying, next, pause, playDisc, prev, resume, setVolume } from './player';
 
 vi.mock('./auth', () => ({
   getAccessToken: vi.fn().mockResolvedValue('token'),
@@ -25,14 +25,20 @@ describe('player', () => {
     return { url: url as string, method: init.method as string | undefined, body: init.body as string | undefined };
   };
 
-  it('playAlbum envia o context_uri do álbum', async () => {
+  it('playDisc envia o context_uri do álbum', async () => {
     fetchMock.mockResolvedValue(empty());
-    await playAlbum('spotify:album:a1');
+    await playDisc('spotify:album:a1');
     expect(call(0)).toEqual({
       url: 'https://api.spotify.com/v1/me/player/play',
       method: 'PUT',
       body: JSON.stringify({ context_uri: 'spotify:album:a1' }),
     });
+  });
+
+  it('playDisc também toca playlists', async () => {
+    fetchMock.mockResolvedValue(empty());
+    await playDisc('spotify:playlist:p1');
+    expect(call(0).body).toBe(JSON.stringify({ context_uri: 'spotify:playlist:p1' }));
   });
 
   it('resume dá play sem corpo', async () => {
@@ -51,6 +57,26 @@ describe('player', () => {
     expect(call(2)).toMatchObject({ url: 'https://api.spotify.com/v1/me/player/previous', method: 'POST' });
   });
 
+  it('setVolume envia o percentual arredondado e limitado', async () => {
+    fetchMock.mockImplementation(() => Promise.resolve(empty()));
+    await setVolume(42.6);
+    await setVolume(150);
+    expect(call(0)).toMatchObject({ url: 'https://api.spotify.com/v1/me/player/volume?volume_percent=43', method: 'PUT' });
+    expect(call(1).url).toContain('volume_percent=100');
+  });
+
+  it('getNowPlaying indica dispositivo sem volume remoto', async () => {
+    fetchMock.mockResolvedValue(
+      json({
+        is_playing: true,
+        progress_ms: 0,
+        device: { name: 'iPhone', volume_percent: null, supports_volume: false },
+        item: { type: 'track', name: 'X', duration_ms: 1 },
+      }),
+    );
+    expect(await getNowPlaying()).toMatchObject({ volumePercent: undefined, supportsVolume: false });
+  });
+
   it('sem dispositivo ativo, toca no primeiro dispositivo disponível', async () => {
     fetchMock
       .mockResolvedValueOnce(noDevice())
@@ -58,13 +84,13 @@ describe('player', () => {
         json({ devices: [{ id: 'd1', name: 'Mac', type: 'Computer', is_active: false, is_restricted: false }] }),
       )
       .mockResolvedValueOnce(empty());
-    await playAlbum('spotify:album:a1');
+    await playDisc('spotify:album:a1');
     expect(call(2).url).toBe('https://api.spotify.com/v1/me/player/play?device_id=d1');
   });
 
   it('sem nenhum dispositivo, lança "Abra o Spotify em algum dispositivo"', async () => {
     fetchMock.mockResolvedValueOnce(noDevice()).mockResolvedValueOnce(json({ devices: [] }));
-    await expect(playAlbum('spotify:album:a1')).rejects.toMatchObject({
+    await expect(playDisc('spotify:album:a1')).rejects.toMatchObject({
       kind: 'no-device',
       message: 'Abra o Spotify em algum dispositivo',
     });
@@ -85,8 +111,10 @@ describe('player', () => {
       json({
         is_playing: true,
         progress_ms: 1000,
-        device: { name: 'Mac' },
+        device: { name: 'Mac', volume_percent: 60, supports_volume: true },
+        context: { uri: 'spotify:album:a1' },
         item: {
+          id: 't1',
           type: 'track',
           name: 'So What',
           duration_ms: 545000,
@@ -97,14 +125,18 @@ describe('player', () => {
     );
     expect(await getNowPlaying()).toEqual({
       isPlaying: true,
+      trackId: 't1',
       trackName: 'So What',
       artist: 'Miles Davis',
       albumName: 'Kind of Blue',
       albumUri: 'spotify:album:a1',
+      contextUri: 'spotify:album:a1',
       imageUrl: 'img',
       progressMs: 1000,
       durationMs: 545000,
       deviceName: 'Mac',
+      volumePercent: 60,
+      supportsVolume: true,
     });
   });
 });
