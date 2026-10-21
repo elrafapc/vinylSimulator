@@ -85,7 +85,7 @@
 - Decisão: adicionar `playlist-read-private` e `playlist-read-collaborative` aos escopos.
 - Consequência: quem entrou antes precisa sair e entrar de novo; o app pede isso ao receber 403.
 
-## ADR-012 — Sugestão de álbum via Last.fm
+## ADR-012 — Sugestão de álbum via Last.fm (era a 2ª "ADR-005") — SUBSTITUÍDA (ver ADR-027)
 
 - Data: 2026-10-20
 - Contexto: Spotify removeu endpoints de recomendação e artistas relacionados.
@@ -174,7 +174,7 @@
 - Decisão: `src/library/currentDisc.ts` define o disco atual pelo contexto do player (álbum/playlist) ou, sem ele, pelo álbum da faixa; nada tocando = disco selecionado. Playlist tocada direto pelo Spotify chega só com o id: antes de guardar, busca nome/dono/capa em `GET /playlists/{id}` (se falhar, guarda como "Playlist"). `getMyPlaylists` passou a ler todas as páginas (50 por vez, até 40 páginas) uma vez ao abrir o importador; o filtro é local, sem acento e sem diferenciar maiúsculas.
 - Consequência: abrir o importador faz uma chamada por página de playlists; playlists de terceiros podem ficar com nome genérico se o Spotify recusar o `GET /playlists/{id}` em Development Mode.
 
-## ADR-024 — Chave do Last.fm só no servidor (proxy /api/lastfm)
+## ADR-024 — Chave do Last.fm só no servidor (proxy /api/lastfm) — REVERTIDA (ver ADR-026)
 
 - Data: 2026-10-21
 - Contexto: T31. Com `VITE_LASTFM_API_KEY`, a chave ia para o bundle e ficava visível para qualquer visitante do app publicado (ADR-022).
@@ -189,3 +189,45 @@
 - Decisão: `useMediaQuery('(max-width: 767px)')` troca o layout. No celular a vitrola ocupa a largura toda; o menu vira painel fixo que sobe de baixo (CSS, até 85% da altura), com alça, "Fechar", fundo escurecido e Esc; começa sempre fechado, com estado próprio (não usa nem altera o "recolher menu" salvo do desktop). Fechado, fica montado e `inert` (os sons seguem tocando). Com o painel fechado, uma barrinha fixa mostra a faixa atual e ▶/❚❚; tocar no texto abre o painel. Áreas de toque ≥ 44px valem no celular e em qualquer tela `pointer: coarse` (tablets); o knob ganha área invisível de ~45px. Meta tags de app para iOS, `viewport-fit=cover` e margens de área segura; manifest com `id`.
 - Alternativas: só ajustar o grid (menu empilhado embaixo da vitrola) — rolagem longa e controles longe da vitrola.
 - Consequência: em 768px vale o layout de desktop. Verificado em 375px e 768px no Chrome headless com respostas do Spotify simuladas (sem rolagem horizontal; 0 alvos < 44px em 375px). Sem gesto de arrastar para fechar o painel. Instalar no celular exige HTTPS (deploy) — não testado em aparelho.
+
+## ADR-026 — Reverter o proxy do Last.fm (volta a chave no cliente)
+
+- Data: 2026-10-21
+- Contexto: a T31 (ADR-024, proxy `/api/lastfm` com a chave no servidor) não funcionou no uso real.
+- Decisão: voltar ao estado anterior: `src/suggest/lastfm.ts` chama o Last.fm direto com `VITE_LASTFM_API_KEY`; removidos `api/`, o middleware do `vite.config.ts`, `api` do `tsconfig` e a exceção `/api/*` do `vercel.json`; `.env.example` e README voltaram para `VITE_LASTFM_API_KEY`.
+- Consequência: a chave do Last.fm volta a ir para o bundle e fica visível no app publicado (como na ADR-022). T31 volta a pendente.
+
+## ADR-027 — Remover a sugestão de álbum
+
+- Data: 2026-10-21
+- Contexto: T41. A sugestão via Last.fm (ADR-012) dependia de uma chave exposta no navegador (ADR-026) e a tentativa de escondê-la no servidor não funcionou (ADR-024).
+- Decisão: remover a função inteira: seção "Sugestão" do menu, componente `Suggestion`, `src/suggest/` (incl. a integração com o Last.fm) e seus testes; `VITE_LASTFM_API_KEY` sai do `.env.example` e do README. Substitui a ADR-012; ADR-024 e ADR-026 ficam só como histórico.
+- Consequência: sem chave de terceiros no app; nenhuma chamada fora do Spotify. A T31 (chave no servidor) perde o objeto. Quem tinha `VITE_LASTFM_API_KEY` no `.env.local` pode apagar a linha.
+
+## ADR-028 — Categorias da estante (formato v2 + migração)
+
+- Data: 2026-10-21
+- Contexto: T38 — prateleiras por categoria.
+- Decisão: estante em `localStorage['vinil.library']` = `{ version: 2, categories: [{id, name}], discs: [Disc + categoryId] }`; ordem dos arrays = ordem das prateleiras/discos (base para a T39). "Sem categoria" não é guardada: é `categoryId: null`, não pode ser renomeada/excluída e aparece por último (só se tiver discos). Nomes: obrigatórios, até 40 caracteres, únicos sem diferenciar acento/maiúsculas, "Sem categoria" reservado. Excluir categoria move os discos para `null`, na mesma ordem. Disco novo entra na frente, em "Sem categoria"; favoritar de novo mantém a categoria. Migração automática na 1ª leitura: `vinil.favorites` (v1) → v2 na mesma ordem, tudo em "Sem categoria"; a chave antiga fica como cópia de segurança e não é mais lida. Leitura defensiva descarta entradas inválidas/repetidas e solta discos de categoria inexistente. Lógica em `src/library/favorites.ts`; UI via `useFavorites`.
+- Consequência: estante expandida com uma prateleira por categoria (criar/renomear/excluir com confirmação no painel; seletor de categoria sob cada capa); carrossel com chips de filtro ("Todas" por padrão, só na sessão). `vinil.favorites` pode ser apagada numa task futura.
+## ADR-029 — Clicar num disco da estante abre os detalhes (não toca mais direto)
+
+- Data: 2026-10-21
+- Contexto: T40.
+- Decisão: a capa grande + faixas do bloco "Disco" virou o componente `DiscInfo` (em `DiscDetails.tsx`), reaproveitado pelo novo `DiscDialog`. Clicar numa capa do carrossel ou da estante expandida abre o `DiscDialog` (sem trocar o disco da vitrola); ele tem "▶ Tocar" (mesma ação de baixar a agulha com esse disco: se já é o contexto pausado, retoma; se já toca, vira "Tocando"), "Remover da estante" e o seletor de categoria (`CategorySelect`, o mesmo de sob as capas). Abre por cima da estante, que continua aberta; Esc (capturado antes dos outros), clique fora e × fecham só o diálogo; "Tocar" fecha diálogo, estante e painel do celular. O botão ▶ sobre o disco selecionado (T17) continua tocando direto.
+- Consequência: rótulo das capas mudou de "Colocar X no toca-discos" para "Abrir X". O App guarda só o id do disco aberto e lê da estante, então categoria/remoção refletem na hora e remover fecha o diálogo.
+
+## ADR-030 — Arrastar para reorganizar a estante com @dnd-kit
+
+- Data: 2026-10-21
+- Contexto: T39 — reordenar discos na prateleira e mover entre prateleiras, com mouse, toque e teclado, sem quebrar o clique que abre os detalhes (T40).
+- Decisão: dependências autorizadas `@dnd-kit/core@6.3.1` e `@dnd-kit/sortable@10.0.0` (versões fixas; `@dnd-kit/utilities` entra só como dependência interna da `sortable`). A regra fica em `src/library/favorites.ts`: `dropTarget` (alvo = outro disco → entra no lugar dele; alvo = prateleira `shelf:<id>` → fim dela) e `moveDiscTo`/`reorderDisc` (reposiciona no array global e troca a categoria), com testes. Na estante expandida, um `DndContext` envolve todas as prateleiras (uma `SortableContext` por prateleira + a prateleira inteira como alvo, para soltar em vazia/no fim). Sensores: mouse começa após 8px; toque após segurar ~0,2s (para arrastar o dedo continuar rolando); teclado com Espaço para pegar/soltar, setas para mover e Esc para cancelar (Enter segue abrindo os detalhes). Capa flutuante (`DragOverlay`) acompanha o ponteiro entre prateleiras; "Sem categoria" aparece durante o arrasto mesmo vazia. Avisos para leitor de tela em português. Clique logo após soltar e Esc durante o arrasto são ignorados pela estante.
+- Alternativas: HTML5 drag-and-drop nativo — não funciona com toque nem teclado; implementação própria — mais código e acessibilidade pior.
+- Consequência: bundle de 228 para 291 kB (+21 kB com gzip). Entre prateleiras não há "abrir espaço" ao vivo na prateleira de destino (a capa flutuante e o destaque da prateleira indicam onde vai cair). Carrossel segue a ordem da estante, que é a mesma do array. No uso com teclado, o deslocamento pelas setas depende das posições na tela (não testável no jsdom; coberto pela lógica de `dropTarget`/`moveDiscTo`).
+
+## ADR-031 — Volume só pelo knob da vitrola
+
+- Data: 2026-10-21
+- Contexto: T42 — o slider de volume do menu duplicava o knob (ADR-020).
+- Decisão: seção "Volume" sai do menu; `VolumeControl` fica no código, desligado por `SHOW_VOLUME_SLIDER = false` no `App.tsx` (trocar para `true` reativa, usando o mesmo `useVolume` do knob).
+- Consequência: em dispositivo sem volume remoto o aviso do slider não aparece mais; o knob fica desabilitado (`aria-disabled`).

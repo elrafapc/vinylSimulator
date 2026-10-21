@@ -18,14 +18,11 @@ Antes de concluir qualquer mudança: `npm run validate` (lint + tipos + testes).
 
 ## Variáveis de ambiente
 
-| Variável | Onde fica | Obrigatória | Para quê |
-| --- | --- | --- | --- |
-| `VITE_SPOTIFY_CLIENT_ID` | navegador | sim | Client ID do app no [Spotify Developer Dashboard](https://developer.spotify.com/dashboard). |
-| `LASTFM_API_KEY` | só no servidor | não | Chave da [API do Last.fm](https://www.last.fm/api/account/create), usada só na "Sugestão de álbum". Sem ela, o resto funciona e a sugestão avisa que falta a chave. |
+| Variável | Obrigatória | Para quê |
+| --- | --- | --- |
+| `VITE_SPOTIFY_CLIENT_ID` | sim | Client ID do app no [Spotify Developer Dashboard](https://developer.spotify.com/dashboard). |
 
-- Variáveis com prefixo `VITE_` vão para o JavaScript do navegador, ou seja, ficam **visíveis** para quem abrir o app. O Client ID do Spotify é público por natureza (login PKCE, sem segredo).
-- A chave do Last.fm **não** tem o prefixo: o navegador chama `/api/lastfm` e quem fala com o Last.fm, com a chave, é o servidor — a função [`api/lastfm.ts`](api/lastfm.ts) na Vercel e um middleware equivalente no `npm run dev`/`npm run preview` (ver `vite.config.ts`). A função só aceita `artist.getSimilar` e `artist.getTopAlbums`.
-- Quem usava `VITE_LASTFM_API_KEY` no `.env.local` precisa renomear para `LASTFM_API_KEY`.
+Variáveis `VITE_*` vão para o JavaScript do navegador, ou seja, ficam **visíveis** para quem abrir o app. O Client ID do Spotify é público por natureza (login PKCE, sem segredo).
 
 ## Configurar o app no Spotify
 
@@ -44,8 +41,8 @@ npm run build   # gera dist/
 ```
 
 - Framework: Vite · Build: `npm run build` · Saída: `dist`
-- Configure `VITE_SPOTIFY_CLIENT_ID` e, se quiser sugestões, `LASTFM_API_KEY` nas variáveis de ambiente do projeto (Settings → Environment Variables). A pasta `api/` vira Vercel Functions automaticamente.
-- `vercel.json` manda qualquer rota (exceto `/api/*`) para `index.html`, para o `/callback` do login funcionar.
+- Configure `VITE_SPOTIFY_CLIENT_ID` nas variáveis de ambiente do projeto.
+- `vercel.json` manda qualquer rota para `index.html`, para o `/callback` do login funcionar.
 - Cadastre `https://seu-dominio/callback` no Spotify (ver acima).
 
 ## Estrutura
@@ -54,8 +51,6 @@ npm run build   # gera dist/
 - `src/components/` — interface (vitrola, busca, estante, controles…)
 - `src/hooks/` — estado do player, volume, favoritos
 - `src/audio/` — sons gerados no navegador (chiado, chuva, lareira)
-- `src/suggest/` — sugestão de álbum via Last.fm (chama `/api/lastfm`)
-- `api/` — Vercel Functions (`lastfm.ts`: proxy do Last.fm com a chave no servidor)
 - `public/` — logos, ícones e manifest (PWA)
 
 Decisões de projeto em [DECISIONS.md](DECISIONS.md); backlog em [TASKS.md](TASKS.md); marca em [BRAND.md](BRAND.md).

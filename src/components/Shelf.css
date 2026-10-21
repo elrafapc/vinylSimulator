@@ -6,7 +6,8 @@
   flex-wrap: wrap;
   gap: 0 10px;
   margin: 0;
-  padding: 0 12px;
+  /* Espaço da tábua sob a última fileira (o fundo desenha uma tábua a cada --row). */
+  padding: 0 12px var(--plank);
   list-style: none;
   border-radius: 8px;
   background:
@@ -25,7 +26,7 @@
   --cover: 160px;
   --plank: 14px;
   gap: 0 20px;
-  padding: 0 24px;
+  padding: 0 24px var(--plank);
   max-height: none;
 }
 
@@ -236,11 +237,151 @@
   background: var(--hover);
 }
 
+/* Categorias (T38): uma prateleira por categoria na estante expandida. */
+.shelf-panel__tools {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.shelf-row + .shelf-row {
+  margin-top: 24px;
+}
+
+.shelf-row__header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.shelf-row__title {
+  margin: 0;
+  font-family: Georgia, serif;
+  font-size: 1.1rem;
+  font-weight: 400;
+}
+
+.shelf-row__count {
+  color: var(--muted);
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.85rem;
+}
+
+.shelf-row__actions {
+  display: flex;
+  gap: 4px;
+}
+
+.shelf-row__actions .link {
+  margin-left: 0;
+  padding: 4px 8px;
+  font-size: 0.85rem;
+}
+
+.shelf-row__confirm {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--danger-bg);
+}
+
+.shelf-row__confirm p {
+  flex-basis: 100%;
+  margin: 0 0 4px;
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
+.shelf-row__empty {
+  margin: 0;
+  padding: 14px 16px;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.category-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.category-form .album-search__input {
+  width: auto;
+  flex: 1 1 200px;
+}
+
+.category-form__error {
+  flex-basis: 100%;
+  margin: 0;
+}
+
+/* Seletor de categoria acima de cada capa: a prateleira ganha altura para ele. */
+.shelf--tagged {
+  --row: calc(var(--cover) + var(--plank) + 44px);
+}
+
+.shelf--tagged .shelf__slot {
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.shelf--tagged .shelf__remove {
+  top: 36px;
+}
+
+.shelf__category {
+  width: var(--cover);
+  padding: 3px 4px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--input-bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.75rem;
+}
+
 /* Estante em carrossel no menu (T34). */
 .carousel {
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+.carousel__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.carousel__chip {
+  padding: 4px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: none;
+  color: var(--muted);
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.carousel__chip:hover {
+  background: var(--hover);
+}
+
+.carousel__chip[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: var(--selected-bg);
+  color: var(--accent);
 }
 
 .carousel__row {
@@ -355,7 +496,7 @@
   .shelf--large {
     --cover: 104px;
     gap: 0 12px;
-    padding: 0 12px;
+    padding: 0 12px var(--plank);
   }
 
 }
@@ -385,5 +526,166 @@
 
   .importer__list label {
     min-height: 44px;
+  }
+
+  .carousel__chip,
+  .shelf__category,
+  .shelf-row__actions .link {
+    min-height: 44px;
+  }
+
+  .shelf--tagged {
+    --row: calc(var(--cover) + var(--plank) + 60px);
+  }
+
+  .shelf--tagged .shelf__remove {
+    top: 52px;
+  }
+}
+
+/* Detalhes do disco da estante (T40): por cima da estante expandida e do painel do celular. */
+.disc-dialog {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  background: var(--backdrop);
+}
+
+.disc-dialog__box {
+  position: relative;
+  width: min(760px, 100%);
+  max-height: 100%;
+  padding: 24px;
+  overflow-y: auto;
+  border-radius: 16px;
+  background: var(--panel);
+  box-shadow: 0 30px 80px var(--shadow);
+}
+
+.disc-dialog__box .details__body {
+  padding: 0;
+  background: none;
+}
+
+.disc-dialog__close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 1;
+  background: var(--panel);
+}
+
+.disc-dialog__artist {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.disc-dialog__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  align-items: center;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.disc-dialog__play:disabled {
+  opacity: 0.6;
+  cursor: default;
+  filter: none;
+}
+
+.disc-dialog__category {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.disc-dialog__select {
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--input-bg);
+  color: var(--text);
+  font: inherit;
+}
+
+.disc-dialog__actions .disc-dialog__remove {
+  margin-left: auto;
+  color: var(--danger);
+}
+
+@media (max-width: 767px) {
+  .disc-dialog {
+    padding: 12px;
+  }
+
+  .disc-dialog__box {
+    padding: 16px;
+  }
+
+  .disc-dialog__actions .disc-dialog__remove {
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 767px), (pointer: coarse) {
+  .disc-dialog__select,
+  .disc-dialog__actions .disc-dialog__remove {
+    min-height: 44px;
+  }
+}
+
+/* Arrastar para reorganizar (T39). */
+.shelf-row {
+  border-radius: 10px;
+  transition: box-shadow 0.15s;
+}
+
+.shelf-row--over {
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+.shelf-panel .shelf__disc {
+  cursor: grab;
+  touch-action: manipulation;
+}
+
+.shelf__slot--dragging {
+  opacity: 0.35;
+}
+
+/* Capa que acompanha o ponteiro (tem o tamanho do item original, com o seletor acima). */
+.shelf-drag {
+  display: flex;
+  align-items: flex-end;
+  width: 100%;
+  height: 100%;
+  cursor: grabbing;
+}
+
+.shelf-drag img,
+.shelf-drag .shelf__spine {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 2px;
+  background: var(--placeholder);
+  object-fit: cover;
+  box-shadow: 8px 14px 24px var(--shadow);
+  transform: rotate(-3deg) scale(1.04);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shelf-drag img,
+  .shelf-drag .shelf__spine {
+    transform: none;
   }
 }

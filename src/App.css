@@ -448,64 +448,6 @@ button {
   width: 100%;
 }
 
-.suggestion {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 10px;
-}
-
-.suggestion__card {
-  display: grid;
-  grid-template-columns: 72px minmax(0, 1fr);
-  gap: 10px 12px;
-  width: 100%;
-  padding: 12px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-}
-
-.suggestion__card img,
-.suggestion__nocover {
-  width: 72px;
-  height: 72px;
-  border-radius: 4px;
-  background: var(--placeholder);
-  object-fit: cover;
-}
-
-.suggestion__text {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.suggestion__text strong,
-.suggestion__text span {
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-.suggestion__text span {
-  color: var(--muted);
-  font-size: 0.85rem;
-}
-
-.suggestion__text em {
-  margin-top: 4px;
-  color: var(--accent);
-  font-size: 0.8rem;
-  font-style: normal;
-}
-
-.suggestion__actions {
-  display: flex;
-  flex-wrap: wrap;
-  grid-column: 1 / -1;
-  gap: 8px;
-}
-
 .now-playing {
   width: 100%;
   margin: 0;

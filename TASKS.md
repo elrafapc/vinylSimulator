@@ -222,12 +222,12 @@ Legenda: [ ] pendente · [~] em andamento · [x] feita · ∥ pode rodar em para
   * Aceite: botão "Importar do Spotify" lista minhas playlists e adiciona as escolhidas aos favoritos
 
 - [ ]  T16 — Volume do Spotify (slider que aumenta/abaixa o volume da música)
+
   - Arquivos: `src/spotify/player.ts`, `player.test.ts`, `src/components/VolumeControl.tsx`, `VolumeControl.test.tsx`
   - Depende de: T08
   - Aceite: slider inicia com o volume atual do dispositivo; mover altera o volume no Spotify (envio com debounce ~300ms); se o dispositivo não suportar volume remoto, slider desabilitado com aviso
-
-
 - [ ]  T17 — Botão play sobre o disco selecionado (na busca, estante e minhas playlists)
+
   - Arquivos: `src/components/PlayOverlay.tsx`, `PlayOverlay.test.tsx`, componentes de lista
   - Depende de: T07
   - Aceite: item selecionado mostra botão play sobre a capa; clicar dispara a mesma ação de "baixar agulha"; acessível por teclado (Enter/Espaço)
@@ -288,29 +288,64 @@ Legenda: [ ] pendente · [~] em andamento · [x] feita · ∥ pode rodar em para
   - Depende de: T29
   - Aceite: redirect do Spotify usa window.location.origin + "/callback"; vercel.json com rewrite para index.html; npm run build gera dist/ sem erro; README com variáveis de ambiente
 
-
 ## Fase 7 — Refinamento do menu
 
-- [x]  T32 — Menu lateral reorganizado + cabeçalho fixo
+- [X]  T32 — Menu lateral reorganizado + cabeçalho fixo
+
   - Depende de: T30
   - Aceite: cabeçalho (logo + botão recolher menu) fixo no topo; bloco da música atual (faixa, artista, álbum, progresso) sai de baixo da vitrola e vai para o topo do menu; nome do dispositivo exibido como "Tocando em: <nome>"; ordem do menu: 1 Música atual, 2 Player, 3 Volume, 4 Disco, 5 Buscar discos, 6 Estante, 7 Importar do Spotify, 8 Sugestão, 9 Sons; Sons recolhível, sempre inicia recolhido; vitrola ganha o espaço liberado
-- [x]  T33 — Botão adicionar/remover o disco atual da estante (ao lado do player)
+- [X]  T33 — Botão adicionar/remover o disco atual da estante (ao lado do player)
+
   - Depende de: T32
   - Aceite: botão ao lado dos controles mostra se o disco tocando está na estante (ícone preenchido/vazio); clicar adiciona ou remove; funciona para álbum e playlist tocados direto pelo Spotify (usa o contexto atual; sem contexto, usa o álbum da faixa); usa src/library/ (sem localStorage direto); estante atualiza na hora
-- [x]  T34 — Estante em carrossel + botão expandir
+- [X]  T34 — Estante em carrossel + botão expandir
+
   - Depende de: T32
   - Aceite: no menu, carrossel horizontal com capas pequenas (scroll/arrastar e setas); clicar numa capa coloca o disco na vitrola; botão "Expandir estante" abre o painel grande atual com todos os discos; estante vazia mostra aviso
-- [x]  T35 — Busca dentro de "Importar do Spotify"
+- [X]  T35 — Busca dentro de "Importar do Spotify"
+
   - Depende de: T32
   - Aceite: campo de busca filtra minhas playlists por nome enquanto digito (sem acento e sem diferenciar maiúsculas); carrega todas as páginas de GET /me/playlists uma vez e filtra localmente; mensagem quando nada encontrado
-- [x]  T31 — Chave do Last.fm no servidor (função da Vercel)
+- [ ]  T31 — Chave do Last.fm no servidor (função da Vercel)
+
   - Depende de: T28
   - Aceite: chamadas ao Last.fm passam por /api/lastfm (Vercel Function); chave em LASTFM_API_KEY (sem prefixo VITE_) e ausente do bundle; função aceita só artist.getSimilar e artist.getTopAlbums; dev local continua funcionando
-- [x]  T36 — Layout para celular
+- [X]  T36 — Layout para celular
+
   - Depende de: T31, T35
   - Aceite: abaixo de 768px a vitrola ocupa a largura toda no topo e o menu vira painel deslizante de baixo para cima; controles com área de toque ≥ 44px; knob funciona por toque; sem scroll horizontal; PWA instalável no celular; testado em 375px e 768px
+- [X]  T32 — Menu lateral reorganizado + cabeçalho fixo   - Depende de: T30   - Aceite: cabeçalho (logo + botão recolher menu) fixo no topo; bloco da música atual (faixa, artista, álbum, progresso) sai de baixo da vitrola e vai para o topo do menu; nome do dispositivo exibido como "Tocando em: <nome>"; ordem do menu: 1 Música atual, 2 Player, 3 Volume, 4 Disco, 5 Estante, 6 Buscar discos, 7 Importar do Spotify, 8 Sugestão, 9 Sons; Sons recolhível, sempre inicia recolhido; vitrola ganha o espaço liberado
 
-- [x]  T32 — Menu lateral reorganizado + cabeçalho fixo   - Depende de: T30   - Aceite: cabeçalho (logo + botão recolher menu) fixo no topo; bloco da música atual (faixa, artista, álbum, progresso) sai de baixo da vitrola e vai para o topo do menu; nome do dispositivo exibido como "Tocando em: <nome>"; ordem do menu: 1 Música atual, 2 Player, 3 Volume, 4 Disco, 5 Estante, 6 Buscar discos, 7 Importar do Spotify, 8 Sugestão, 9 Sons; Sons recolhível, sempre inicia recolhido; vitrola ganha o espaço liberado
+## Fase 8 — Estante organizada
+
+- [X]  T41 — Remover a função de sugestão de álbum
+  - Depende de: —
+  - Aceite: botão e seção "Sugestão" saem do menu; src/suggest/, SuggestButton e testes removidos; integração Last.fm removida (incl. /api/lastfm, se existir); VITE_LASTFM_API_KEY/LASTFM_API_KEY fora de .env.example e README; nenhuma referência a "lastfm" no código (grep vazio); ADR-005 marcado como substituído em DECISIONS.md; npm run validate e npm run build passam
+- [X]  T38 — Categorias da estante (prateleiras)
+  - Depende de: T34
+  - Aceite: criar, renomear e excluir categorias (excluir move os discos para "Sem categoria"); cada disco tem 1 categoria; estante expandida mostra uma prateleira por categoria, com nome e contagem; carrossel do menu ganha filtro por categoria (chips, "Todas" por padrão); dados antigos migrados sem perda (todos para "Sem categoria"); lógica em src/library/ com testes
+- [X]  T40 — Clicar num disco da estante expande os detalhes com botão Tocar
+  - Depende de: T38
+  - Aceite: clicar numa capa (carrossel ou estante expandida) abre a mesma visualização do bloco Disco (capa grande + faixas), reaproveitando o componente da T20; botões "Tocar" (mesma ação de baixar agulha), "Remover da estante" e seletor de categoria; clicar não toca mais direto; fecha com Esc, clique fora ou botão fechar
+- [X]  T39 — Arrastar para reorganizar discos
+  - Depende de: T40
+  - Aceite: na estante expandida, arrastar reordena dentro da prateleira e move entre prateleiras; clique simples continua abrindo os detalhes (arrasto só começa após mover ~8px); funciona com mouse, toque e teclado (setas + espaço); ordem persiste e o carrossel segue a mesma ordem; usa @dnd-kit (dependência autorizada); testes da reordenação em src/library/
+
+
+## Fase 9 — Etiquetas e ajustes
+
+- [x]  T42 — Volume só pelo knob físico
+  - Depende de: T27
+  - Aceite: slider de volume sai do menu; componente VolumeControl mantido no código e desligado por uma constante (SHOW_VOLUME_SLIDER = false) com comentário explicando como reativar; knob continua funcionando; testes do knob passam
+- [ ]  T43 — Etiquetas (várias por disco) no lugar de categoria única
+  - Depende de: T39
+  - Aceite: botão "+ Nova categoria" e seletores acima das capas removidos; nos detalhes do disco, campo de etiquetas: digitar + Enter adiciona (cria se não existir), autocompletar com etiquetas já usadas, clicar no "x" ou Backspace remove; sem duplicadas (ignora maiúsculas/acentos, mantém a 1ª grafia); lista de etiquetas derivada dos discos (some quando nenhum disco usa); etiquetas não aparecem nas capas; estante vira uma coleção única (sem prateleira por categoria); arrastar da T39 ajustado: só reordena dentro da coleção única (remove mover entre prateleiras), ordem atual preservada na migração; migração: categoria antiga vira etiqueta, "Sem categoria" vira nenhuma; lógica em src/library/ com testes
+- [ ]  T44 — Filtro por etiquetas na estante
+  - Depende de: T43
+  - Aceite: no topo da estante expandida, chips com todas as etiquetas + "Sem etiqueta"; selecionar 1 ou mais mostra só os discos que têm TODAS as selecionadas; contador "X de Y discos"; botão limpar filtro; carrossel do menu segue o mesmo filtro; com filtro ativo o arrastar fica desabilitado (reordenar só sem filtro)
+- [ ]  T45 — Redesign visual da estante (em branch separada)
+  - Depende de: T44
+  - Aceite: feito na branch design-estante; estante de madeira escura em CSS: moldura com cornija no topo e rodapé na base, fundo de tábuas verticais, prateleiras grossas com borda frontal e sombra, divisória central em 2 vãos (1 vão abaixo de 768px); capas em pé sobre as prateleiras com sombra de contato; quantidade de prateleiras se ajusta ao número de discos; filtros e detalhes do disco intactos; light e dark ok; sem imagens externas pesadas
 
 ## Prompt padrão (uma task por sessão, /clear entre tasks)
 

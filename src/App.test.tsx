@@ -2,7 +2,7 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
-import { getMe, getPlaylistDisc, searchDiscs } from './spotify/api';
+import { getDiscTracks, getMe, getPlaylistDisc, searchDiscs } from './spotify/api';
 import { isLoggedIn } from './spotify/auth';
 import { SpotifyError } from './spotify/errors';
 import { getNowPlaying, pause, playDisc, resume, type NowPlaying } from './spotify/player';
@@ -67,6 +67,7 @@ describe('App', () => {
     vi.mocked(getMe).mockResolvedValue({ id: 'u1', displayName: 'Rafael' });
     vi.mocked(searchDiscs).mockResolvedValue([kindOfBlue]);
     vi.mocked(getNowPlaying).mockResolvedValue(null);
+    vi.mocked(getDiscTracks).mockResolvedValue([]);
   });
 
   it('T02: deslogado mostra "Entrar com Spotify"', async () => {
@@ -158,13 +159,21 @@ describe('App', () => {
     expect(screen.getByRole('complementary', { name: 'Menu' })).toBeVisible();
   });
 
-  it('T19: estante abre em painel; escolher disco coloca no toca-discos e fecha', async () => {
+  it('T19/T40: clicar num disco da estante expandida abre os detalhes por cima, sem fechar a estante', async () => {
     localStorage.setItem('vinil.favorites', JSON.stringify([kindOfBlue]));
     render(<App />);
     await userEvent.click(await screen.findByRole('button', { name: 'Expandir estante (1)' }));
-    await userEvent.click(within(screen.getByRole('dialog', { name: 'Estante' })).getByRole('button', { name: 'Colocar Kind of Blue no toca-discos' }));
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-    expect(screen.getByRole('img', { name: 'Capa de Kind of Blue' })).toBeInTheDocument();
+    await userEvent.click(within(screen.getByRole('dialog', { name: 'Estante' })).getByRole('button', { name: 'Abrir Kind of Blue' }));
+    expect(screen.getByRole('dialog', { name: 'Detalhes de Kind of Blue' })).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: 'Estante' })).toBeInTheDocument();
+    // Não tocou nem trocou o disco da vitrola.
+    expect(playDisc).not.toHaveBeenCalled();
+    expect(screen.getByRole('img', { name: 'Sem disco' })).toBeInTheDocument();
+
+    // Esc fecha só os detalhes; a estante continua aberta.
+    await userEvent.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog', { name: 'Detalhes de Kind of Blue' })).not.toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: 'Estante' })).toBeInTheDocument();
   });
 
   it('T17: play sobre o disco selecionado baixa a agulha', async () => {
@@ -186,12 +195,10 @@ describe('App', () => {
     expect(within(menu).getAllByRole('heading', { level: 2 }).map((h) => h.textContent?.replace(/[▸▾]/g, '').trim())).toEqual([
       'Música atual',
       'Player',
-      'Volume',
       'Disco',
       'Estante',
       'Buscar discos',
       'Importar do Spotify',
-      'Sugestão',
       'Sons',
     ]);
   });
@@ -224,16 +231,41 @@ describe('App', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Guardar Playlist na estante' }));
     expect(getPlaylistDisc).toHaveBeenCalledWith('p9');
     expect(await screen.findByRole('button', { name: 'Expandir estante (1)' })).toBeInTheDocument();
-    expect(JSON.parse(localStorage.getItem('vinil.favorites') ?? '[]')[0]).toMatchObject({ name: 'Jazz da Ana' });
+    expect(JSON.parse(localStorage.getItem('vinil.library') ?? '{}').discs[0]).toMatchObject({ name: 'Jazz da Ana' });
   });
 
-  it('T34: carrossel no menu coloca o disco na vitrola', async () => {
+  it('T40: capa do carrossel abre os detalhes; "Tocar" baixa a agulha com o disco e fecha', async () => {
+    vi.mocked(playDisc).mockResolvedValue();
     localStorage.setItem('vinil.favorites', JSON.stringify([kindOfBlue]));
     render(<App />);
     const carousel = await screen.findByRole('list', { name: 'Estante (carrossel)' });
-    await userEvent.click(within(carousel).getByRole('button', { name: 'Colocar Kind of Blue no toca-discos' }));
-    expect(screen.getByRole('img', { name: 'Capa de Kind of Blue' })).toBeInTheDocument();
+    await userEvent.click(within(carousel).getByRole('button', { name: 'Abrir Kind of Blue' }));
+    const details = screen.getByRole('dialog', { name: 'Detalhes de Kind of Blue' });
+    expect(within(details).getByRole('img', { name: 'Capa de Kind of Blue' })).toBeInTheDocument();
+    expect(getDiscTracks).toHaveBeenCalledWith(kindOfBlue.uri);
+    expect(playDisc).not.toHaveBeenCalled();
+
+    await userEvent.click(within(details).getByRole('button', { name: '▶ Tocar' }));
+    expect(playDisc).toHaveBeenCalledWith(kindOfBlue.uri);
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(screen.getByTestId('turntable')).toHaveClass('turntable--playing');
+  });
+
+  it('T40: nos detalhes dá para trocar a categoria e remover da estante', async () => {
+    localStorage.setItem(
+      'vinil.library',
+      JSON.stringify({ version: 2, categories: [{ id: 'c1', name: 'Jazz' }], discs: [{ ...kindOfBlue, categoryId: null }] }),
+    );
+    render(<App />);
+    const carousel = await screen.findByRole('list', { name: 'Estante (carrossel)' });
+    await userEvent.click(within(carousel).getByRole('button', { name: 'Abrir Kind of Blue' }));
+    const details = screen.getByRole('dialog', { name: 'Detalhes de Kind of Blue' });
+    await userEvent.selectOptions(within(details).getByLabelText('Categoria de Kind of Blue'), 'Jazz');
+    expect(JSON.parse(localStorage.getItem('vinil.library') ?? '{}').discs[0].categoryId).toBe('c1');
+
+    await userEvent.click(within(details).getByRole('button', { name: 'Remover da estante' }));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(screen.getByText(/Sua estante está vazia/)).toBeInTheDocument();
   });
 
   describe('T36: celular', () => {
@@ -287,5 +319,16 @@ describe('App', () => {
       expect(screen.getByRole('main')).not.toHaveClass('deck--collapsed');
       expect(localStorage.getItem('vinil.sidebar')).toBe('collapsed');
     });
+  });
+
+  it('T42: volume só pelo knob da vitrola (sem slider no menu)', async () => {
+    vi.mocked(getNowPlaying).mockResolvedValue({ ...soWhat(true), volumePercent: 60, supportsVolume: true });
+    render(<App />);
+    const menu = await screen.findByRole('complementary', { name: 'Menu' });
+    expect(within(menu).queryByLabelText('Volume do Spotify')).not.toBeInTheDocument();
+    expect(within(menu).queryByRole('heading', { name: 'Volume' })).not.toBeInTheDocument();
+    const knob = await screen.findByRole('slider', { name: 'Volume (botão da vitrola)' });
+    await waitFor(() => expect(knob).toHaveAttribute('aria-valuenow', '60'));
+    expect(knob).not.toHaveAttribute('aria-disabled');
   });
 });

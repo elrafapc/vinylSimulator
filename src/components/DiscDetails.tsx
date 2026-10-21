@@ -20,15 +20,19 @@ function formatDuration(ms: number): string {
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
 }
 
-// Miniatura abaixo do toca-discos; expandida mostra a capa grande e as faixas.
-export function DiscDetails({ disc, currentTrackId }: DiscDetailsProps) {
-  const [expanded, setExpanded] = useState(false);
+interface DiscInfoProps {
+  disc: DiscOnTable;
+  currentTrackId?: string;
+}
+
+// Capa grande + faixas (busca as faixas ao aparecer). Usado no bloco "Disco" e nos detalhes da estante (T40).
+export function DiscInfo({ disc, currentTrackId }: DiscInfoProps) {
   const [state, setState] = useState<TracksState>({ status: 'loading' });
   const { uri } = disc;
   const ref = parseDiscUri(uri);
 
   useEffect(() => {
-    if (!expanded || !uri || !parseDiscUri(uri)) return;
+    if (!uri || !parseDiscUri(uri)) return;
     let cancelled = false;
     setState({ status: 'loading' });
     getDiscTracks(uri)
@@ -42,8 +46,44 @@ export function DiscDetails({ disc, currentTrackId }: DiscDetailsProps) {
     return () => {
       cancelled = true;
     };
-  }, [expanded, uri]);
+  }, [uri]);
 
+  const name = disc.name ?? 'disco';
+
+  return (
+    <div className="details__body">
+      {disc.imageUrl && <img className="details__cover" src={disc.imageUrl} alt={`Capa de ${name}`} />}
+      <div className="details__tracks">
+        <h3>{name}</h3>
+        {!ref && <p className="details__note">Faixas indisponíveis.</p>}
+        {ref && state.status === 'loading' && <p className="details__note">Lendo a contracapa…</p>}
+        {ref && state.status === 'error' && <p className="details__note">{state.message}</p>}
+        {ref && state.status === 'ok' && (
+          <ol className="details__list" aria-label="Faixas">
+            {state.tracks.map((track) => {
+              const current = Boolean(currentTrackId) && track.id === currentTrackId;
+              return (
+                <li
+                  key={`${track.number}-${track.id}`}
+                  className={current ? 'details__track details__track--current' : 'details__track'}
+                  aria-current={current ? 'true' : undefined}
+                >
+                  <span className="details__num">{track.number}</span>
+                  <span className="details__name">{track.name}</span>
+                  <span className="details__time">{formatDuration(track.durationMs)}</span>
+                </li>
+              );
+            })}
+          </ol>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Miniatura abaixo do toca-discos; expandida mostra a capa grande e as faixas.
+export function DiscDetails({ disc, currentTrackId }: DiscDetailsProps) {
+  const [expanded, setExpanded] = useState(false);
   const name = disc.name ?? 'disco';
 
   return (
@@ -57,35 +97,7 @@ export function DiscDetails({ disc, currentTrackId }: DiscDetailsProps) {
       >
         {disc.imageUrl ? <img src={disc.imageUrl} alt="" /> : <span className="details__nocover" />}
       </button>
-      {expanded && (
-        <div className="details__body">
-          {disc.imageUrl && <img className="details__cover" src={disc.imageUrl} alt={`Capa de ${name}`} />}
-          <div className="details__tracks">
-            <h3>{name}</h3>
-            {!ref && <p className="details__note">Faixas indisponíveis.</p>}
-            {ref && state.status === 'loading' && <p className="details__note">Lendo a contracapa…</p>}
-            {ref && state.status === 'error' && <p className="details__note">{state.message}</p>}
-            {ref && state.status === 'ok' && (
-              <ol className="details__list" aria-label="Faixas">
-                {state.tracks.map((track) => {
-                  const current = Boolean(currentTrackId) && track.id === currentTrackId;
-                  return (
-                    <li
-                      key={`${track.number}-${track.id}`}
-                      className={current ? 'details__track details__track--current' : 'details__track'}
-                      aria-current={current ? 'true' : undefined}
-                    >
-                      <span className="details__num">{track.number}</span>
-                      <span className="details__name">{track.name}</span>
-                      <span className="details__time">{formatDuration(track.durationMs)}</span>
-                    </li>
-                  );
-                })}
-              </ol>
-            )}
-          </div>
-        </div>
-      )}
+      {expanded && <DiscInfo disc={disc} currentTrackId={currentTrackId} />}
     </section>
   );
 }

@@ -15,8 +15,36 @@ describe('useFavorites', () => {
     first.unmount();
 
     const { result } = renderHook(() => useFavorites());
-    expect(result.current.favorites).toEqual([kob]);
+    expect(result.current.favorites).toEqual([{ ...kob, categoryId: null }]);
     act(() => result.current.toggle(kob));
     expect(result.current.favorites).toEqual([]);
+  });
+
+  it('categorias: criar, mover disco, renomear, excluir; erro de nome vira mensagem', () => {
+    const { result } = renderHook(() => useFavorites());
+    act(() => result.current.toggle(kob));
+    let error: string | null = null;
+    act(() => {
+      error = result.current.addCategory('Jazz');
+    });
+    expect(error).toBeNull();
+    const jazz = result.current.categories[0].id;
+
+    act(() => result.current.moveDisc('a1', jazz));
+    expect(result.current.favorites[0].categoryId).toBe(jazz);
+
+    act(() => {
+      error = result.current.addCategory('jazz');
+    });
+    expect(error).toBe('Já existe uma categoria "jazz".');
+
+    act(() => {
+      error = result.current.renameCategory(jazz, 'Jazz modal');
+    });
+    expect(result.current.categories[0].name).toBe('Jazz modal');
+
+    act(() => result.current.removeCategory(jazz));
+    expect(result.current.categories).toEqual([]);
+    expect(result.current.favorites[0].categoryId).toBeNull();
   });
 });

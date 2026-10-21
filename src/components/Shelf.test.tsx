@@ -18,20 +18,20 @@ describe('Shelf', () => {
 
   it('mostra os favoritos', () => {
     render(<Shelf discs={[kob, jazz]} onSelect={vi.fn()} />);
-    expect(screen.getByRole('button', { name: 'Colocar Kind of Blue no toca-discos' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Colocar Jazz no toca-discos' })).toHaveTextContent('Jazz');
+    expect(screen.getByRole('button', { name: 'Abrir Kind of Blue' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Abrir Jazz' })).toHaveTextContent('Jazz');
   });
 
   it('clicar seleciona o disco', async () => {
     const onSelect = vi.fn();
     render(<Shelf discs={[kob, jazz]} onSelect={onSelect} />);
-    await userEvent.click(screen.getByRole('button', { name: 'Colocar Jazz no toca-discos' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Abrir Jazz' }));
     expect(onSelect).toHaveBeenCalledWith(jazz);
   });
 
   it('marca o disco selecionado', () => {
     render(<Shelf discs={[kob, jazz]} selectedId="a1" onSelect={vi.fn()} />);
-    expect(screen.getByRole('button', { name: 'Colocar Kind of Blue no toca-discos' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'Abrir Kind of Blue' })).toHaveAttribute('aria-pressed', 'true');
   });
 
   it('tirar da estante chama onRemove', async () => {

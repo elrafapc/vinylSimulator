@@ -3,6 +3,7 @@ import { AlbumSearch } from './components/AlbumSearch';
 import { AmbientSounds } from './components/AmbientSounds';
 import { Controls } from './components/Controls';
 import { DiscDetails } from './components/DiscDetails';
+import { DiscDialog } from './components/DiscDialog';
 import { Footer } from './components/Footer';
 import { FullscreenToggle } from './components/FullscreenToggle';
 import { Logo } from './components/Logo';
@@ -13,7 +14,6 @@ import { PlaylistImporter } from './components/Shelf';
 import { ShelfCarousel } from './components/ShelfCarousel';
 import { ShelfPanel } from './components/ShelfPanel';
 import { ShelfToggle } from './components/ShelfToggle';
-import { Suggestion } from './components/Suggestion';
 import { Turntable } from './components/Turntable';
 import { VolumeControl } from './components/VolumeControl';
 import { useFavorites } from './hooks/useFavorites';
@@ -26,6 +26,10 @@ import { getMe, type Disc, type User } from './spotify/api';
 import { CLIENT_ID, handleCallback, isLoggedIn, login, logout } from './spotify/auth';
 import { errorMessage, SpotifyError } from './spotify/errors';
 import { next, pause, playDisc, prev, resume } from './spotify/player';
+
+// T42: o volume fica só no knob da vitrola. Para mostrar de novo o slider "Volume" no menu,
+// troque para true — o VolumeControl continua no código e usa o mesmo estado do knob (useVolume).
+const SHOW_VOLUME_SLIDER = false;
 
 type AuthState = { status: 'loading' } | { status: 'out'; error?: string } | { status: 'in'; user: User };
 
@@ -111,7 +115,19 @@ interface DeckProps {
 function Deck({ user, onLogout }: DeckProps) {
   const { nowPlaying, error: pollError, refresh, setNowPlaying } = useNowPlaying();
   const [selected, setSelected] = useState<Disc | null>(null);
-  const { favorites, favoriteIds, toggle: toggleFavorite, remove: removeFavorite, addMany } = useFavorites();
+  const {
+    favorites,
+    categories,
+    favoriteIds,
+    toggle: toggleFavorite,
+    remove: removeFavorite,
+    addMany,
+    addCategory,
+    renameCategory,
+    removeCategory,
+    moveDisc,
+    drop,
+  } = useFavorites();
   const [actionError, setActionError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const { collapsed, toggle: toggleSidebar } = useSidebar();
@@ -123,6 +139,9 @@ function Deck({ user, onLogout }: DeckProps) {
   // Sons começa sempre recolhido (não guarda a escolha).
   const [soundsOpen, setSoundsOpen] = useState(false);
   const closeShelf = useCallback(() => setShelfOpen(false), []);
+  // Detalhes de um disco da estante (T40): guardo o id e leio da estante, para refletir categoria/remoção.
+  const [detailId, setDetailId] = useState<string | null>(null);
+  const closeDetails = useCallback(() => setDetailId(null), []);
 
   useEffect(() => {
     if (!mobile || !sheetOpen) return;
@@ -132,7 +151,7 @@ function Deck({ user, onLogout }: DeckProps) {
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, [mobile, sheetOpen]);
-  // Slider do menu e botão da vitrola compartilham o mesmo volume.
+  // Knob da vitrola (e o slider do menu, se SHOW_VOLUME_SLIDER) compartilham o mesmo volume.
   const volume = useVolume(nowPlaying?.volumePercent);
 
   const playing = nowPlaying?.isPlaying ?? false;
@@ -194,19 +213,29 @@ function Deck({ user, onLogout }: DeckProps) {
     return run(resume, true);
   }
 
+  // "Tocar" nos detalhes do disco: mesma ação de baixar a agulha com esse disco no prato.
+  function playFromShelf(disc: Disc) {
+    setDetailId(null);
+    setShelfOpen(false);
+    setSheetOpen(false);
+    setSelected(disc);
+    if (nowPlaying?.contextUri === disc.uri) {
+      if (!playing) void run(resume, true);
+      return;
+    }
+    void run(() => playDisc(disc.uri), true, disc);
+  }
+
   // Trocar de disco exige levantar a agulha primeiro, como numa vitrola de verdade.
   function handleSelect(disc: Disc) {
     setSelected(disc);
     if (playing && nowPlaying?.contextUri !== disc.uri) void run(pause, false);
   }
 
-  // Sugestão: coloca o disco e já baixa a agulha.
-  function playNow(disc: Disc) {
-    setSelected(disc);
-    void run(() => playDisc(disc.uri), true, disc);
-  }
 
   const canPlay = Boolean(selected || nowPlaying);
+  // Removido da estante enquanto aberto: o diálogo some sozinho.
+  const detailDisc = favorites.find((d) => d.id === detailId) ?? null;
   const message = actionError ?? pollError;
 
   return (
@@ -294,8 +323,12 @@ function Deck({ user, onLogout }: DeckProps) {
           />
         </div>
 
-        <h2>Volume</h2>
-        <VolumeControl supported={nowPlaying?.supportsVolume} control={volume} />
+        {SHOW_VOLUME_SLIDER && (
+          <>
+            <h2>Volume</h2>
+            <VolumeControl supported={nowPlaying?.supportsVolume} control={volume} />
+          </>
+        )}
 
         {cover.uri && (
           <>
@@ -311,8 +344,9 @@ function Deck({ user, onLogout }: DeckProps) {
         <h2>Estante</h2>
         <ShelfCarousel
           discs={favorites}
+          categories={categories}
           selectedId={selected?.id}
-          onSelect={handleSelect}
+          onSelect={(disc) => setDetailId(disc.id)}
           onExpand={() => setShelfOpen(true)}
         />
 
@@ -328,9 +362,6 @@ function Deck({ user, onLogout }: DeckProps) {
 
         <h2>Importar do Spotify</h2>
         <PlaylistImporter existingIds={favoriteIds} onImport={addMany} />
-
-        <h2>Sugestão</h2>
-        <Suggestion shelf={favorites} favoriteIds={favoriteIds} onPlay={playNow} onAdd={(disc) => addMany([disc])} />
 
         <h2>
           <button
@@ -362,12 +393,31 @@ function Deck({ user, onLogout }: DeckProps) {
       {shelfOpen && (
         <ShelfPanel
           discs={favorites}
+          categories={categories}
+          onCreateCategory={addCategory}
+          onRenameCategory={renameCategory}
+          onDeleteCategory={removeCategory}
+          onMoveDisc={moveDisc}
+          onDrop={drop}
           selectedId={selected?.id}
           playingId={playingId}
-          onSelect={handleSelect}
+          onSelect={(disc) => setDetailId(disc.id)}
           onRemove={removeFavorite}
           onPlay={() => void togglePlay()}
           onClose={closeShelf}
+        />
+      )}
+
+      {detailDisc && (
+        <DiscDialog
+          disc={detailDisc}
+          categories={categories}
+          playing={playing && nowPlaying?.contextUri === detailDisc.uri}
+          currentTrackId={nowPlaying?.contextUri === detailDisc.uri ? nowPlaying.trackId : undefined}
+          onPlay={playFromShelf}
+          onRemove={removeFavorite}
+          onMoveDisc={moveDisc}
+          onClose={closeDetails}
         />
       )}
     </main>
