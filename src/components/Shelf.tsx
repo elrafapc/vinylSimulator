@@ -1,5 +1,6 @@
-import { useState, type CSSProperties, type HTMLAttributes } from 'react';
+import { useLayoutEffect, useRef, useState, type CSSProperties, type HTMLAttributes } from 'react';
 import { rectSortingStrategy, SortableContext, useSortable } from '@dnd-kit/sortable';
+import { MOBILE_QUERY, useMediaQuery } from '../hooks/useMediaQuery';
 import { getMyPlaylists, type Disc } from '../spotify/api';
 import { errorMessage, SpotifyError } from '../spotify/errors';
 import { PlayOverlay } from './PlayOverlay';
@@ -30,13 +31,17 @@ interface DragBindings {
   style?: CSSProperties;
   dragging?: boolean;
   handle?: HTMLAttributes<HTMLButtonElement>;
+  /** Na estante de móvel (T45) as capas ficam em vãos/prateleiras: item é <div role="listitem">. */
+  asDiv?: boolean;
 }
 
-function SlotContent({ disc, selectedId, onSelect, onRemove, onPlay, playingId, ref, style, dragging, handle }: SlotProps & DragBindings) {
+function SlotContent({ disc, selectedId, onSelect, onRemove, onPlay, playingId, ref, style, dragging, handle, asDiv }: SlotProps & DragBindings) {
+  const Tag = asDiv ? 'div' : 'li';
   return (
-    <li
+    <Tag
       ref={ref}
       style={style}
+      role={asDiv ? 'listitem' : undefined}
       className={`shelf__slot${disc.id === selectedId ? ' shelf__slot--selected' : ''}${dragging ? ' shelf__slot--dragging' : ''}`}
     >
       <button
@@ -63,12 +68,12 @@ function SlotContent({ disc, selectedId, onSelect, onRemove, onPlay, playingId, 
           ×
         </button>
       )}
-    </li>
+    </Tag>
   );
 }
 
 // Arrastar pela capa: o clique simples continua abrindo os detalhes (o arrasto só começa depois de ~8px).
-function SortableSlot(props: SlotProps) {
+function SortableSlot(props: SlotProps & { asDiv?: boolean }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: props.disc.id });
   const style: CSSProperties = {
     transform: transform ? `translate3d(${Math.round(transform.x)}px, ${Math.round(transform.y)}px, 0)` : undefined,
@@ -85,18 +90,100 @@ function SortableSlot(props: SlotProps) {
   );
 }
 
+// Medidas da estante de móvel (T45). As capas e espaços vêm daqui e vão para o CSS como variáveis.
+const BOOKCASE = {
+  frame: 22, // laterais da moldura
+  divider: 18, // divisória central
+  bayPadding: 16, // folga dentro de cada vão
+  gap: 16, // entre capas
+  cover: 132, // capa no desktop
+  coverMobile: 96,
+  minShelves: 2,
+  fallbackWidth: 1000, // antes de medir (e no jsdom)
+};
+
+// Largura disponível: medida já na montagem (antes de pintar) e depois acompanhada pelo ResizeObserver (nativo).
+function useWidth<T extends HTMLElement>() {
+  const ref = useRef<T>(null);
+  const [width, setWidth] = useState(0);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    setWidth(el.getBoundingClientRect().width);
+    if (typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(([entry]) => setWidth(entry.contentRect.width));
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+  return { ref, width };
+}
+
+/**
+ * Distribui os discos (na ordem da estante) em prateleiras e vãos: prateleira 1 = vão esquerdo, depois o direito;
+ * depois prateleira 2... A quantidade de prateleiras acompanha o número de discos (mínimo de 2).
+ */
+function layoutBookcase<T>(discs: T[], width: number, bays: number) {
+  const cover = bays === 1 ? BOOKCASE.coverMobile : BOOKCASE.cover;
+  const inner = (width || BOOKCASE.fallbackWidth) - 2 * BOOKCASE.frame - (bays - 1) * BOOKCASE.divider;
+  const bayWidth = inner / bays - 2 * BOOKCASE.bayPadding;
+  const perBay = Math.max(1, Math.floor((bayWidth + BOOKCASE.gap) / (cover + BOOKCASE.gap)));
+  const perShelf = perBay * bays;
+  const count = Math.max(BOOKCASE.minShelves, Math.ceil(discs.length / perShelf));
+  const shelves = Array.from({ length: count }, (_, s) =>
+    Array.from({ length: bays }, (_, b) => discs.slice(s * perShelf + b * perBay, s * perShelf + (b + 1) * perBay)),
+  );
+  return { cover, shelves };
+}
+
+// Estante grande: móvel de madeira com cornija, rodapé, fundo de tábuas, prateleiras grossas e divisória (2 vãos; 1 no celular).
+function Bookcase({ discs, label, sortable, ...rest }: Omit<ShelfProps, 'large'> & { label: string }) {
+  const mobile = useMediaQuery(MOBILE_QUERY);
+  const bays = mobile ? 1 : 2;
+  const { ref, width } = useWidth<HTMLDivElement>();
+  const { cover, shelves } = layoutBookcase(discs, width, bays);
+  const style = {
+    '--cover': `${cover}px`,
+    '--frame': `${BOOKCASE.frame}px`,
+    '--divider': `${BOOKCASE.divider}px`,
+    '--bay-padding': `${BOOKCASE.bayPadding}px`,
+    '--gap': `${BOOKCASE.gap}px`,
+  } as CSSProperties;
+
+  return (
+    <div ref={ref} className={`bookcase bookcase--${bays === 1 ? 'single' : 'double'}`} style={style}>
+      <div className="bookcase__cornice" aria-hidden />
+      <div className="bookcase__body" role="list" aria-label={label}>
+        {shelves.map((row, s) => (
+          <div key={s} className="bookcase__shelf" role="presentation">
+            {row.map((bay, b) => (
+              <div key={b} className="bookcase__bay" role="presentation">
+                {bay.map((disc) =>
+                  sortable ? (
+                    <SortableSlot key={disc.id} disc={disc} asDiv {...rest} />
+                  ) : (
+                    <SlotContent key={disc.id} disc={disc} asDiv {...rest} />
+                  ),
+                )}
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+      <div className="bookcase__plinth" aria-hidden />
+    </div>
+  );
+}
+
 export function Shelf({ discs, label = 'Estante de discos', large, sortable, ...rest }: ShelfProps) {
   if (discs.length === 0) {
     return <p className="shelf__empty">Sua estante está vazia. Busque um disco e toque na ☆ para guardá-lo aqui.</p>;
   }
-  const list = (
-    <ul className={`shelf${large ? ' shelf--large' : ''}`} aria-label={label}>
+  const list = large ? (
+    <Bookcase discs={discs} label={label} sortable={sortable} {...rest} />
+  ) : (
+    <ul className="shelf" aria-label={label}>
       {discs.map((disc) =>
-        sortable ? (
-          <SortableSlot key={disc.id} disc={disc} {...rest} />
-        ) : (
-          <SlotContent key={disc.id} disc={disc} {...rest} />
-        ),
+        sortable ? <SortableSlot key={disc.id} disc={disc} {...rest} /> : <SlotContent key={disc.id} disc={disc} {...rest} />,
       )}
     </ul>
   );

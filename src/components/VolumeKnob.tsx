@@ -5,6 +5,8 @@ interface VolumeKnobProps {
   value: number;
   disabled?: boolean;
   onChange: (value: number) => void;
+  /** Soltou o knob: envia o volume já, sem esperar os 300ms (T46). */
+  onCommit?: () => void;
 }
 
 const WHEEL_STEP = 2;
@@ -20,7 +22,7 @@ const KEY_STEPS: Record<string, (v: number) => number> = {
 };
 
 // Botão da vitrola (no lugar do 33/45 da foto) controla o volume do Spotify.
-export function VolumeKnob({ value, disabled, onChange }: VolumeKnobProps) {
+export function VolumeKnob({ value, disabled, onChange, onCommit }: VolumeKnobProps) {
   const ref = useRef<HTMLDivElement>(null);
   const dragging = useRef(false);
   const latest = useRef({ value, disabled, onChange });
@@ -74,8 +76,14 @@ export function VolumeKnob({ value, disabled, onChange }: VolumeKnobProps) {
         fromPointer(e);
       }}
       onPointerMove={(e) => dragging.current && fromPointer(e)}
-      onPointerUp={() => (dragging.current = false)}
-      onPointerCancel={() => (dragging.current = false)}
+      onPointerUp={() => {
+        if (dragging.current) onCommit?.();
+        dragging.current = false;
+      }}
+      onPointerCancel={() => {
+        if (dragging.current) onCommit?.();
+        dragging.current = false;
+      }}
     >
       <span className="knob__cap" style={{ transform: `rotate(${valueToAngle(value)}deg)` }} />
       <span className="knob__mark knob__mark--min" aria-hidden>

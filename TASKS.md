@@ -335,17 +335,25 @@ Legenda: [ ] pendente · [~] em andamento · [x] feita · ∥ pode rodar em para
 ## Fase 9 — Etiquetas e ajustes
 
 - [X]  T42 — Volume só pelo knob físico
+
   - Depende de: T27
   - Aceite: slider de volume sai do menu; componente VolumeControl mantido no código e desligado por uma constante (SHOW_VOLUME_SLIDER = false) com comentário explicando como reativar; knob continua funcionando; testes do knob passam
 - [X]  T43 — Etiquetas (várias por disco) no lugar de categoria única
+
   - Depende de: T39
   - Aceite: botão "+ Nova categoria" e seletores acima das capas removidos; nos detalhes do disco, campo de etiquetas: digitar + Enter adiciona (cria se não existir), autocompletar com etiquetas já usadas, clicar no "x" ou Backspace remove; sem duplicadas (ignora maiúsculas/acentos, mantém a 1ª grafia); lista de etiquetas derivada dos discos (some quando nenhum disco usa); etiquetas não aparecem nas capas; estante vira uma coleção única (sem prateleira por categoria); arrastar da T39 ajustado: só reordena dentro da coleção única (remove mover entre prateleiras), ordem atual preservada na migração; migração: categoria antiga vira etiqueta, "Sem categoria" vira nenhuma; lógica em src/library/ com testes
-- [x]  T44 — Filtro por etiquetas na estante
+- [X]  T44 — Filtro por etiquetas na estante
+
   - Depende de: T43
   - Aceite: no topo da estante expandida, chips com todas as etiquetas + "Sem etiqueta"; selecionar 1 ou mais mostra só os discos que têm TODAS as selecionadas; contador "X de Y discos"; botão limpar filtro; carrossel do menu segue o mesmo filtro; com filtro ativo o arrastar fica desabilitado (reordenar só sem filtro)
-- [ ]  T45 — Redesign visual da estante (em branch separada)
+- [X]  T45 — Redesign visual da estante (em branch separada)
+
   - Depende de: T44
   - Aceite: feito na branch design-estante; estante de madeira escura em CSS: moldura com cornija no topo e rodapé na base, fundo de tábuas verticais, prateleiras grossas com borda frontal e sombra, divisória central em 2 vãos (1 vão abaixo de 768px); capas em pé sobre as prateleiras com sombra de contato; quantidade de prateleiras se ajusta ao número de discos; filtros e detalhes do disco intactos; light e dark ok; sem imagens externas pesadas
+- [ ]  T46 — Reduzir chamadas ao Spotify (erro 429 "muitas requisições")
+
+  - Depende de: —
+  - Aceite: toda chamada passa por um único cliente em src/spotify/ com: fila global que pausa tudo pelo tempo do header Retry-After ao receber 429 (sem retry imediato), deduplicação de GETs iguais em andamento e contador de chamadas/min visível no console em dev; um único polling no app inteiro (contexto compartilhado, nenhum componente faz polling próprio); polling adaptativo: 5s tocando, 20s pausado, parado com aba oculta, imediato após ação do usuário; barra de progresso avança localmente entre polls; cache de detalhes de álbum (memória + localStorage, sem expirar) e de playlists (10 min); busca com debounce 400ms, mínimo 2 caracteres e cache por termo; knob envia volume só ao soltar ou após 300ms parado; uso normal (tocar, pausar, abrir estante e detalhes) fica abaixo de 20 chamadas/min; testes do cliente cobrindo 429 + Retry-After e deduplicação
 
 ## Prompt padrão (uma task por sessão, /clear entre tasks)
 

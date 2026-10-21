@@ -19,6 +19,7 @@ import { Turntable } from './components/Turntable';
 import { VolumeControl } from './components/VolumeControl';
 import { useFavorites } from './hooks/useFavorites';
 import { MOBILE_QUERY, useMediaQuery } from './hooks/useMediaQuery';
+import { NowPlayingProvider } from './hooks/NowPlayingProvider';
 import { useNowPlaying } from './hooks/useNowPlaying';
 import { useSidebar } from './hooks/useSidebar';
 import { useVolume } from './hooks/useVolume';
@@ -106,7 +107,11 @@ export default function App() {
     );
   }
 
-  return <Deck user={auth.user} onLogout={handleLogout} />;
+  return (
+    <NowPlayingProvider>
+      <Deck user={auth.user} onLogout={handleLogout} />
+    </NowPlayingProvider>
+  );
 }
 
 interface DeckProps {
@@ -115,7 +120,7 @@ interface DeckProps {
 }
 
 function Deck({ user, onLogout }: DeckProps) {
-  const { nowPlaying, error: pollError, refresh, setNowPlaying } = useNowPlaying();
+  const { nowPlaying, error: pollError, fetchedAt, refresh, setNowPlaying } = useNowPlaying();
   const [selected, setSelected] = useState<Disc | null>(null);
   const {
     favorites,
@@ -220,7 +225,7 @@ function Deck({ user, onLogout }: DeckProps) {
         }
         return prev && { ...prev, isPlaying: nextPlaying };
       });
-      setTimeout(() => void refresh(), 600);
+      refresh();
     } catch (error) {
       setActionError(errorMessage(error));
     } finally {
@@ -292,6 +297,7 @@ function Deck({ user, onLogout }: DeckProps) {
           volume={volume.value}
           volumeDisabled={!nowPlaying?.supportsVolume}
           onVolumeChange={volume.change}
+          onVolumeCommit={volume.commit}
         />
         {!canPlay && <p className="hint">Escolha um disco na estante e baixe a agulha.</p>}
         <Footer />
@@ -325,7 +331,7 @@ function Deck({ user, onLogout }: DeckProps) {
         </div>
 
         <h2>Música atual</h2>
-        <NowPlaying nowPlaying={nowPlaying} />
+        <NowPlaying nowPlaying={nowPlaying} fetchedAt={fetchedAt} />
 
         <h2>Player</h2>
         <div className="player-row">

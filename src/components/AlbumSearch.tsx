@@ -3,7 +3,9 @@ import { searchDiscs, type Disc } from '../spotify/api';
 import { errorMessage } from '../spotify/errors';
 import { PlayOverlay } from './PlayOverlay';
 
-const DEBOUNCE_MS = 350;
+// T46: espera o usuário parar de digitar e só busca a partir de 2 letras (o resultado fica em cache por termo).
+const DEBOUNCE_MS = 400;
+const MIN_CHARS = 2;
 
 interface AlbumSearchProps {
   selectedId?: string;
@@ -23,7 +25,7 @@ export function AlbumSearch({ selectedId, favoriteIds, onSelect, onToggleFavorit
 
   useEffect(() => {
     const q = query.trim();
-    if (!q) return;
+    if (q.length < MIN_CHARS) return;
     let cancelled = false;
     const id = setTimeout(async () => {
       setLoading(true);
@@ -46,7 +48,7 @@ export function AlbumSearch({ selectedId, favoriteIds, onSelect, onToggleFavorit
 
   function handleChange(value: string) {
     setQuery(value);
-    if (!value.trim()) setResults([]);
+    if (value.trim().length < MIN_CHARS) setResults([]);
   }
 
   return (

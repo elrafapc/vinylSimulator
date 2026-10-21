@@ -14,6 +14,8 @@ interface TurntableProps {
   volume?: number;
   volumeDisabled?: boolean;
   onVolumeChange?: (value: number) => void;
+  /** Soltou o knob: envia o volume já. */
+  onVolumeCommit?: () => void;
 }
 
 // 33⅓ rpm ≈ 1,8 s por volta.
@@ -73,6 +75,7 @@ export function Turntable({
   volume = 50,
   volumeDisabled,
   onVolumeChange,
+  onVolumeCommit,
 }: TurntableProps) {
   const state = playing ? 'turntable--playing' : 'turntable--stopped';
   const recordRef = useRef<HTMLDivElement>(null);
@@ -93,7 +96,7 @@ export function Turntable({
         />
       </div>
       <span className="turntable__spindle" aria-hidden />
-      {onVolumeChange && <VolumeKnob value={volume} disabled={volumeDisabled} onChange={onVolumeChange} />}
+      {onVolumeChange && <VolumeKnob value={volume} disabled={volumeDisabled} onChange={onVolumeChange} onCommit={onVolumeCommit} />}
 
       <button
         type="button"

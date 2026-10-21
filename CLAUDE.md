@@ -49,6 +49,8 @@ Toca-discos virtual na web que controla o Spotify (app aberto em segundo plano) 
 * Tocar álbum/playlist: 1) PUT /me/player/shuffle?state=false 2) PUT /me/player/play com {"context\_uri": "spotify:album:...", "offset": {"position": 0}, "position\_ms": 0}. Sempre da 1ª faixa, sem aleatório.
 * Em erro, logar no console: método, URL, status e corpo da resposta.
 
+- Limite de requisições: toda chamada passa pelo cliente único de src/spotify/ (respeita Retry-After, deduplica, cacheia). Nunca criar polling próprio em componente; usar o contexto de "tocando agora". Dados de álbum não mudam: sempre cachear.
+
 ## Fluxo de trabalho
 
 * Backlog e status: @TASKS.md
@@ -121,7 +123,6 @@ Toca-discos virtual na web que controla o Spotify (app aberto em segundo plano) 
 - Vite + React + TypeScript
 - Vitest + Testing Library (testes), ESLint
 - Spotify Web API com OAuth PKCE no navegador (sem backend)
-
 
 ## Comandos
 

@@ -1,7 +1,6 @@
-import { getAccessToken, refreshAccessToken } from './auth';
+import { cached, FOREVER, TEN_MINUTES } from './cache';
+import { spotifyFetch } from './client';
 import { SpotifyError } from './errors';
-
-const BASE_URL = 'https://api.spotify.com/v1';
 
 export type DiscKind = 'album' | 'playlist';
 
@@ -34,45 +33,8 @@ interface SpotifyImage {
   width: number | null;
 }
 
-interface ApiErrorBody {
-  error?: { status?: number; message?: string; reason?: string };
-}
-
-async function toSpotifyError(path: string, res: Response): Promise<SpotifyError> {
-  let reason: string | undefined;
-  try {
-    reason = ((await res.json()) as ApiErrorBody).error?.reason;
-  } catch {
-    // corpo vazio ou não-JSON
-  }
-  if (reason === 'NO_ACTIVE_DEVICE') return new SpotifyError('no-device', res.status);
-  if (res.status === 404 && path.startsWith('/me/player')) return new SpotifyError('no-device', 404);
-  if (reason === 'PREMIUM_REQUIRED') return new SpotifyError('premium', res.status);
-  if (res.status === 401) return new SpotifyError('auth', 401);
-  if (res.status === 429) return new SpotifyError('rate-limit', 429);
-  return new SpotifyError('unknown', res.status, `Erro do Spotify (${res.status}).`);
-}
-
-export async function spotifyFetch(path: string, init: RequestInit = {}, retry = true): Promise<Response> {
-  const token = await getAccessToken();
-  if (!token) throw new SpotifyError('auth');
-  let res: Response;
-  try {
-    res = await fetch(`${BASE_URL}${path}`, {
-      ...init,
-      headers: { ...init.headers, Authorization: `Bearer ${token}` },
-    });
-  } catch {
-    throw new SpotifyError('network');
-  }
-  if (res.status === 401 && retry) {
-    const refreshed = await refreshAccessToken();
-    if (!refreshed) throw new SpotifyError('auth', 401);
-    return spotifyFetch(path, init, false);
-  }
-  if (!res.ok) throw await toSpotifyError(path, res);
-  return res;
-}
+// Todo acesso passa pelo cliente único (fila de 429, deduplicação, contador); ver client.ts.
+export { spotifyFetch };
 
 export function pickImage(images: SpotifyImage[] | undefined, minWidth = 300): string | undefined {
   if (!images?.length) return undefined;
@@ -106,7 +68,12 @@ interface SearchResponse {
   };
 }
 
-export async function searchDiscs(query: string, limit = 10): Promise<Disc[]> {
+// Cache por termo (sessão): buscar e apagar não repete a chamada.
+export function searchDiscs(query: string, limit = 10): Promise<Disc[]> {
+  return cached(`search:${limit}:${query.trim().toLowerCase()}`, TEN_MINUTES, () => fetchSearch(query, limit));
+}
+
+async function fetchSearch(query: string, limit: number): Promise<Disc[]> {
   const params = new URLSearchParams({ q: query, type: 'album,playlist', limit: String(limit) });
   const data = (await (await spotifyFetch(`/search?${params}`)).json()) as SearchResponse;
   const albums: Disc[] = (data.albums?.items ?? [])
@@ -161,7 +128,11 @@ const PLAYLISTS_PAGE = 50;
 const MAX_PLAYLIST_PAGES = 40;
 
 // Todas as minhas playlists, página por página (o importador filtra localmente).
-export async function getMyPlaylists(): Promise<Disc[]> {
+export function getMyPlaylists(): Promise<Disc[]> {
+  return cached('my-playlists', TEN_MINUTES, fetchMyPlaylists);
+}
+
+async function fetchMyPlaylists(): Promise<Disc[]> {
   const all: Disc[] = [];
   for (let page = 0; page < MAX_PLAYLIST_PAGES; page++) {
     const params = new URLSearchParams({ limit: String(PLAYLISTS_PAGE), offset: String(page * PLAYLISTS_PAGE) });
@@ -173,7 +144,11 @@ export async function getMyPlaylists(): Promise<Disc[]> {
 }
 
 // Nome, dono e capa de uma playlist (para guardar na estante uma playlist tocada direto pelo Spotify).
-export async function getPlaylistDisc(id: string): Promise<Disc> {
+export function getPlaylistDisc(id: string): Promise<Disc> {
+  return cached(`playlist:${id}`, TEN_MINUTES, () => fetchPlaylistDisc(id));
+}
+
+async function fetchPlaylistDisc(id: string): Promise<Disc> {
   const params = new URLSearchParams({ fields: 'id,uri,name,owner(display_name),images' });
   const res = await spotifyFetch(`/playlists/${encodeURIComponent(id)}?${params}`);
   return playlistToDisc((await res.json()) as PlaylistItem);
@@ -220,15 +195,22 @@ interface PlaylistItemsResponse {
 }
 
 // Álbum via GET /albums/{id}; playlist via /items (só funciona para playlists minhas ou colaborativas).
-export async function getDiscTracks(uri: string): Promise<Track[]> {
+// Álbuns não mudam: cache em memória + localStorage, sem expirar. Faixas de playlist: 10 min.
+export function getDiscTracks(uri: string): Promise<Track[]> {
   const ref = parseDiscUri(uri);
-  if (!ref) throw new SpotifyError('unknown', undefined, 'Faixas indisponíveis.');
-  if (ref.kind === 'album') {
-    const data = (await (await spotifyFetch(`/albums/${encodeURIComponent(ref.id)}`)).json()) as AlbumResponse;
-    return data.tracks.items.map((item) => toTrack(item, item.track_number));
-  }
+  if (!ref) return Promise.reject(new SpotifyError('unknown', undefined, 'Faixas indisponíveis.'));
+  if (ref.kind === 'album') return cached(`album:${ref.id}`, FOREVER, () => fetchAlbumTracks(ref.id), true);
+  return cached(`playlist-items:${ref.id}`, TEN_MINUTES, () => fetchPlaylistTracks(ref.id));
+}
+
+async function fetchAlbumTracks(id: string): Promise<Track[]> {
+  const data = (await (await spotifyFetch(`/albums/${encodeURIComponent(id)}`)).json()) as AlbumResponse;
+  return data.tracks.items.map((item) => toTrack(item, item.track_number));
+}
+
+async function fetchPlaylistTracks(id: string): Promise<Track[]> {
   const params = new URLSearchParams({ limit: '50' });
-  const res = await spotifyFetch(`/playlists/${encodeURIComponent(ref.id)}/items?${params}`);
+  const res = await spotifyFetch(`/playlists/${encodeURIComponent(id)}/items?${params}`);
   const data = (await res.json()) as PlaylistItemsResponse;
   return data.items
     .map((entry) => entry?.item ?? entry?.track ?? null)

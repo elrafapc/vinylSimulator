@@ -21,7 +21,7 @@ describe('ShelfPanel', () => {
     expect(screen.getByRole('dialog', { name: /Estante/ })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Estante (2)' })).toBeInTheDocument();
     expect(screen.getAllByRole('list', { name: 'Estante de discos' })).toHaveLength(1);
-    expect(screen.getByRole('list', { name: 'Estante de discos' })).toHaveClass('shelf--large');
+    expect(screen.getByRole('list', { name: 'Estante de discos' }).closest('.bookcase')).not.toBeNull();
   });
 
   it('sem categorias: nada de "+ Nova categoria", prateleiras nomeadas, seletores ou etiquetas nas capas', () => {

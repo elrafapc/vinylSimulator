@@ -29,6 +29,16 @@
   --shelf-back: #1a1411;
   --shelf-wood: #5a4030;
   --shelf-wood-dark: #3b2a1f;
+
+  /* Estante de móvel (T45): nogueira escura. */
+  --bookcase-wood: #4b3022;
+  --bookcase-wood-dark: #2a1910;
+  --bookcase-wood-light: #7a5236;
+  --bookcase-back: #2b1b12;
+  --bookcase-back-alt: #342217;
+  --bookcase-joint: rgb(0 0 0 / 0.5);
+  --bookcase-grain: rgb(255 214 170 / 0.035);
+  --bookcase-shadow: rgb(0 0 0 / 0.6);
 }
 
 :root[data-theme='light'] {
@@ -58,4 +68,14 @@
   --shelf-back: #ece2d4;
   --shelf-wood: #b48a5c;
   --shelf-wood-dark: #8f6a43;
+
+  /* Estante de móvel (T45): a mesma madeira, um tom mais clara. */
+  --bookcase-wood: #6a4530;
+  --bookcase-wood-dark: #412818;
+  --bookcase-wood-light: #9b6c4a;
+  --bookcase-back: #3f2a1d;
+  --bookcase-back-alt: #4a3223;
+  --bookcase-joint: rgb(0 0 0 / 0.4);
+  --bookcase-grain: rgb(255 220 180 / 0.05);
+  --bookcase-shadow: rgb(40 24 12 / 0.45);
 }

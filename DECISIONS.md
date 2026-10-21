@@ -245,3 +245,10 @@
 - Contexto: T44.
 - Decisão: regra em `src/library/favorites.ts`: `filterDiscs` mostra só os discos com TODAS as etiquetas marcadas (ignora maiúsculas/acentos); "Sem etiqueta" seleciona discos sem nenhuma (junto com outra etiqueta, não sobra ninguém); `filterOptions` = etiquetas em uso + "Sem etiqueta" (se houver disco sem); `activeFilter` descarta da seleção etiquetas que sumiram. O filtro fica no `App` (só na sessão) e é o mesmo na estante expandida e no carrossel (componente `TagFilter`), com contador "X de Y discos" e "Limpar filtro". Com filtro ativo o arrastar fica desligado (a ordem é da coleção inteira; reordenar um subconjunto seria ambíguo).
 - Consequência: sem nenhuma etiqueta na estante, o filtro não aparece. "Expandir estante (N)" e o título da estante contam a coleção toda.
+
+## ADR-034 — Estante expandida como móvel de madeira em CSS
+
+- Data: 2026-10-21
+- Contexto: T45 — dar à estante expandida cara de móvel (inspiração: estante de madeira escura com cornija, tábuas verticais, prateleiras grossas e divisória central). Feita na branch atual (sem `design-estante`), a pedido.
+- Decisão: só gradientes CSS, sem imagens. Variáveis `--bookcase-*` no `theme.css` (nogueira escura no dark; um tom mais clara no light). O `Shelf` grande vira `Bookcase`: mede a largura (na montagem + `ResizeObserver`) e distribui os discos, na ordem da estante, em prateleiras × vãos (2 vãos; 1 abaixo de 768px), com mínimo de 2 prateleiras; as medidas (capa, vão, divisória) ficam no TS e vão para o CSS como variáveis. Itens viram `div role="listitem"` dentro de `role="list"` (os vãos quebram a lista), mantendo nomes acessíveis; o arrastar (dnd-kit) segue funcionando porque usa as posições na tela.
+- Consequência: a lista pequena (`Shelf` sem `large`) segue igual. Se a largura não puder ser medida (ex.: jsdom), usa 1000px como padrão.
