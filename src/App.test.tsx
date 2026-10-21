@@ -137,9 +137,13 @@ describe('App', () => {
     const { unmount } = render(<App />);
     const toggle = await screen.findByRole('button', { name: 'Recolher menu ›' });
     expect(screen.getByRole('complementary', { name: 'Menu' })).toBeVisible();
+    expect(screen.getByRole('img', { name: 'Vinyl Player Simulator' })).toHaveClass('logo--full');
     await userEvent.click(toggle);
     expect(screen.queryByRole('complementary', { name: 'Menu' })).not.toBeInTheDocument();
     expect(screen.getByRole('main')).toHaveClass('deck--collapsed');
+    // Menu recolhido: só o símbolo no topo; o rodapé continua visível.
+    expect(screen.getByRole('img', { name: 'Vinyl Player Simulator' })).toHaveClass('logo--mark');
+    expect(screen.getByRole('link', { name: 'Rafael Carneiro' })).toBeVisible();
     unmount();
 
     render(<App />);
@@ -163,5 +167,13 @@ describe('App', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Tocar Kind of Blue' }));
     expect(playDisc).toHaveBeenCalledWith(kindOfBlue.uri);
     expect(screen.getByTestId('turntable')).toHaveClass('turntable--playing');
+  });
+
+  it('detalhes do disco (capa e faixas) ficam no menu lateral', async () => {
+    vi.mocked(getNowPlaying).mockResolvedValue(soWhat(true));
+    render(<App />);
+    const menu = await screen.findByRole('complementary', { name: 'Menu' });
+    expect(await within(menu).findByRole('button', { name: 'Ver detalhes de Kind of Blue' })).toBeInTheDocument();
+    expect(screen.getByText('So What').closest('aside')).toBeNull();
   });
 });

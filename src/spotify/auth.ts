@@ -1,7 +1,9 @@
 import { SpotifyError } from './errors';
 
 export const CLIENT_ID = import.meta.env.VITE_SPOTIFY_CLIENT_ID as string | undefined;
-export const REDIRECT_URI = 'http://127.0.0.1:5173/callback';
+// Mesmo domínio em que o app está aberto (127.0.0.1 no dev, domínio público em produção).
+// Cada origem precisa estar cadastrada como Redirect URI no Spotify Developer Dashboard.
+export const REDIRECT_URI = `${window.location.origin}/callback`;
 const SCOPES = [
   'user-read-private',
   'user-read-playback-state',

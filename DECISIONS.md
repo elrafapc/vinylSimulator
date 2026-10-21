@@ -145,3 +145,24 @@
 - Contexto: o Spotify guarda o aleatório do último uso; `playDisc` só mandava o `context_uri`, então o álbum começava em ordem aleatória.
 - Decisão: `playDisc` escolhe o dispositivo antes (ativo ou o primeiro disponível, sem restritos), desliga o shuffle, dá play com `offset.position: 0` e `position_ms: 0`, desliga o shuffle de novo e confere em `GET /me/player`; se `shuffle_state` ainda vier `true`, desliga mais uma vez e avisa no console. Vale para álbuns e playlists. Se o dispositivo ocioso recusar o primeiro shuffle, segue (o desligamento depois do play cobre).
 - Consequência: tocar um disco faz 5 a 6 chamadas em vez de 1–3. Substitui, para `playDisc`, o fallback da ADR-006 (que continua valendo para `resume`). O aleatório fica desligado no Spotify depois de usar o vinil.
+
+## ADR-020 — Volume pelo botão da vitrola, com estado compartilhado
+
+- Data: 2026-10-20
+- Contexto: T27 transforma o botão 33/45 da foto num controle de volume.
+- Decisão: estado de volume extraído para `useVolume` (debounce 300 ms e "segurar" 2,5 s contra o polling, como na T16); App cria um só e passa ao slider do menu e ao `VolumeKnob`. O botão é CSS sobre o da foto (-135° = 0%, +135° = 100%), com arrastar, scroll e setas; as marcas 33/45 foram apagadas da foto e viraram "mín./máx." em CSS.
+- Consequência: slider e botão sempre mostram o mesmo valor; mexer nos dois manda uma chamada só.
+
+## ADR-021 — Marca Vinyl Player Simulator
+
+- Data: 2026-10-20
+- Contexto: T29; kit de marca em `vinyl-player-simulator-brand/` (ver BRAND.md).
+- Decisão: arquivos do kit copiados para `public/` (substituem os ícones gerados na T24); logo no topo com as duas versões no HTML e o CSS mostrando a do tema; menu recolhido mostra só o símbolo; `--accent` = #E35634 nos dois temas, com texto #1E1B18 sobre ele (contraste ~5:1); `theme_color`/`background_color` #0A0A0A.
+- Consequência: o fundo do app continua nos tons atuais; só o destaque e a marca mudaram.
+
+## ADR-022 — Preparado para publicar na Vercel
+
+- Data: 2026-10-20
+- Contexto: T28; até aqui o app só rodava em 127.0.0.1 (ADR-002).
+- Decisão: Redirect URI = `window.location.origin + "/callback"`; `vercel.json` reescreve rotas para `index.html`; variáveis documentadas no README.
+- Consequência: cada origem (local e produção) precisa estar cadastrada no Spotify; abrir por `localhost` quebra o login (Spotify não aceita). Variáveis `VITE_*` ficam visíveis no bundle. Antes de publicar: rever direitos da foto da vitrola (ADR-018) e lembrar que em Development Mode só contas da allowlist entram.

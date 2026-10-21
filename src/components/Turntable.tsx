@@ -2,6 +2,7 @@ import { useEffect, useRef, type RefObject } from 'react';
 import armUrl from '../assets/turntable-arm.png';
 import baseUrl from '../assets/turntable-base.png';
 import './Turntable.css';
+import { VolumeKnob } from './VolumeKnob';
 
 interface TurntableProps {
   playing: boolean;
@@ -9,6 +10,10 @@ interface TurntableProps {
   albumName?: string;
   disabled?: boolean;
   onNeedleClick?: () => void;
+  /** Botão da vitrola controla o volume (T27); sem onVolumeChange, o botão da foto fica decorativo. */
+  volume?: number;
+  volumeDisabled?: boolean;
+  onVolumeChange?: (value: number) => void;
 }
 
 // 33⅓ rpm ≈ 1,8 s por volta.
@@ -59,7 +64,16 @@ function usePlatterSpin(playing: boolean, recordRef: RefObject<HTMLDivElement | 
 const ARM_HIT_PATH = 'M341 40 L292 146 L268 199 L249 279 L231 359 L221 399 L204 439 L171 479 L121 524 L70 572';
 const HEADSHELL_HIT = '2,589 86,514 129,561 48,630';
 
-export function Turntable({ playing, coverUrl, albumName, disabled, onNeedleClick }: TurntableProps) {
+export function Turntable({
+  playing,
+  coverUrl,
+  albumName,
+  disabled,
+  onNeedleClick,
+  volume = 50,
+  volumeDisabled,
+  onVolumeChange,
+}: TurntableProps) {
   const state = playing ? 'turntable--playing' : 'turntable--stopped';
   const recordRef = useRef<HTMLDivElement>(null);
   usePlatterSpin(playing, recordRef);
@@ -79,6 +93,7 @@ export function Turntable({ playing, coverUrl, albumName, disabled, onNeedleClic
         />
       </div>
       <span className="turntable__spindle" aria-hidden />
+      {onVolumeChange && <VolumeKnob value={volume} disabled={volumeDisabled} onChange={onVolumeChange} />}
 
       <button
         type="button"

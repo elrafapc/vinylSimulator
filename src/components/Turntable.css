@@ -158,3 +158,86 @@
     transition: none;
   }
 }
+
+/* Botão de volume (T27) sobre o botão da foto: tampa com centro (1044, 774), raio 38.
+   Unidades cqw = % da largura da vitrola, para o texto escalar junto. */
+.turntable {
+  container-type: inline-size;
+}
+
+.knob {
+  position: absolute;
+  left: 80.48%;
+  top: 73.6%;
+  width: 6.08%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  cursor: grab;
+  touch-action: none;
+}
+
+.knob:active {
+  cursor: grabbing;
+}
+
+.knob[aria-disabled='true'] {
+  cursor: not-allowed;
+}
+
+.knob:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 4px;
+}
+
+.knob__cap {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  /* Preto fosco como o da foto, com a luz vindo de cima/esquerda. */
+  background: radial-gradient(circle at 38% 32%, #2c2c2c, #171717 62%, #0e0e0e);
+  box-shadow:
+    inset 1px 1px 1px rgb(255 255 255 / 0.14),
+    inset -1px -2px 3px rgb(0 0 0 / 0.6);
+  transition: transform 0.12s ease-out;
+}
+
+/* Marca indicadora. */
+.knob__cap::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 7%;
+  width: 3.5%;
+  min-width: 1.5px;
+  height: 24%;
+  transform: translateX(-50%);
+  border-radius: 1px;
+  background: #ebe4d8;
+}
+
+.knob__mark {
+  position: absolute;
+  color: #ebe4d8;
+  font-size: 1.15cqw;
+  letter-spacing: 0.04em;
+  opacity: 0.85;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* Nos extremos do giro (-135° e +135°), fora da borda do botão. */
+.knob__mark--min {
+  right: 88%;
+  top: 92%;
+}
+
+.knob__mark--max {
+  left: 88%;
+  top: 92%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .knob__cap {
+    transition: none;
+  }
+}

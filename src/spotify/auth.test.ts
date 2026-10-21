@@ -21,7 +21,11 @@ describe('PKCE', () => {
     expect(challenge).toBe('E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM');
   });
 
-  it('monta URL de autorização com PKCE e redirect em 127.0.0.1', () => {
+  it('redirect usa a origem atual + /callback', () => {
+    expect(REDIRECT_URI).toBe(`${window.location.origin}/callback`);
+  });
+
+  it('monta URL de autorização com PKCE e o redirect da origem atual', () => {
     const url = new URL(buildAuthorizeUrl('client123', 'challenge'));
     expect(url.origin + url.pathname).toBe('https://accounts.spotify.com/authorize');
     expect(url.searchParams.get('client_id')).toBe('client123');

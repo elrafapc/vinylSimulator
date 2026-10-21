@@ -35,15 +35,32 @@ button {
 
 .brand {
   margin: 0;
-  font-family: Georgia, 'Times New Roman', serif;
-  font-size: 3rem;
-  font-weight: 400;
-  letter-spacing: 0.02em;
-  color: var(--text);
+  line-height: 0;
 }
 
-.brand--small {
-  font-size: 1.5rem;
+.logo {
+  display: inline-block;
+  height: 88px;
+}
+
+.brand--small .logo {
+  height: 38px;
+}
+
+.logo__img {
+  display: block;
+  height: 100%;
+  width: auto;
+}
+
+/* Logo com texto creme no tema escuro; com texto escuro no claro. */
+.logo__img--light,
+:root[data-theme='light'] .logo__img--dark {
+  display: none;
+}
+
+:root[data-theme='light'] .logo__img--light {
+  display: block;
 }
 
 .tagline {
@@ -159,6 +176,35 @@ button {
   gap: 16px;
   width: 100%;
   max-width: 760px;
+}
+
+/* Rodapé no fim do palco, à direita: nunca cobre a vitrola nem o menu;
+   com o menu recolhido, o palco ocupa a tela e ele fica no canto inferior direito. */
+.credit {
+  align-self: flex-end;
+  margin-top: auto;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.credit a {
+  color: var(--text);
+  text-decoration: underline;
+  text-decoration-color: var(--border);
+  text-underline-offset: 2px;
+}
+
+.credit a:hover,
+.credit a:focus-visible {
+  color: var(--accent);
+  text-decoration-color: currentColor;
+}
+
+/* Tela de entrada (sem menu): canto inferior direito da janela. */
+.credit-corner {
+  position: fixed;
+  right: 32px;
+  bottom: 20px;
 }
 
 .deck__menu {
@@ -334,6 +380,28 @@ button {
 .details__note {
   margin: 0;
   color: var(--muted);
+}
+
+/* No menu lateral: alinhado à esquerda, capa e faixas uma embaixo da outra. */
+.deck__menu .details {
+  align-items: flex-start;
+}
+
+.deck__menu .details__body {
+  flex-direction: column;
+  gap: 16px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  background: none;
+}
+
+.deck__menu .details__cover {
+  width: min(200px, 100%);
+}
+
+.deck__menu .details__tracks {
+  min-width: 0;
+  width: 100%;
 }
 
 .suggestion {

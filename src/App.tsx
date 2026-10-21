@@ -3,7 +3,9 @@ import { AlbumSearch } from './components/AlbumSearch';
 import { AmbientSounds } from './components/AmbientSounds';
 import { Controls } from './components/Controls';
 import { DiscDetails } from './components/DiscDetails';
+import { Footer } from './components/Footer';
 import { FullscreenToggle } from './components/FullscreenToggle';
+import { Logo } from './components/Logo';
 import { ThemeToggle } from './components/ThemeToggle';
 import { NowPlaying } from './components/NowPlaying';
 import { PlaylistImporter } from './components/Shelf';
@@ -14,6 +16,7 @@ import { VolumeControl } from './components/VolumeControl';
 import { useFavorites } from './hooks/useFavorites';
 import { useNowPlaying } from './hooks/useNowPlaying';
 import { useSidebar } from './hooks/useSidebar';
+import { useVolume } from './hooks/useVolume';
 import { getMe, type Disc, type User } from './spotify/api';
 import { CLIENT_ID, handleCallback, isLoggedIn, login, logout } from './spotify/auth';
 import { errorMessage, SpotifyError } from './spotify/errors';
@@ -73,7 +76,9 @@ export default function App() {
         <div className="corner">
           <ThemeToggle />
         </div>
-        <h1 className="brand">Vinil Virtual</h1>
+        <h1 className="brand">
+          <Logo />
+        </h1>
         <p className="tagline">Um disco por vez. Sem distrações.</p>
         {CLIENT_ID ? (
           <button type="button" className="primary" onClick={() => void login()}>
@@ -83,6 +88,9 @@ export default function App() {
           <p className="error">Configure VITE_SPOTIFY_CLIENT_ID em .env.local e reinicie o servidor.</p>
         )}
         {auth.error && <p className="error">{auth.error}</p>}
+        <div className="credit-corner">
+          <Footer />
+        </div>
       </main>
     );
   }
@@ -104,6 +112,8 @@ function Deck({ user, onLogout }: DeckProps) {
   const { collapsed, toggle: toggleSidebar } = useSidebar();
   const [shelfOpen, setShelfOpen] = useState(false);
   const closeShelf = useCallback(() => setShelfOpen(false), []);
+  // Slider do menu e botão da vitrola compartilham o mesmo volume.
+  const volume = useVolume(nowPlaying?.volumePercent);
 
   const playing = nowPlaying?.isPlaying ?? false;
   // Se outro disco está tocando (ex.: trocado no app do Spotify), o toca-discos mostra ele.
@@ -169,7 +179,9 @@ function Deck({ user, onLogout }: DeckProps) {
     <main className={`deck${collapsed ? ' deck--collapsed' : ''}`}>
       <section className="deck__stage">
         <header className="deck__header">
-          <h1 className="brand brand--small">Vinil Virtual</h1>
+          <h1 className="brand brand--small">
+            <Logo variant={collapsed ? 'mark' : 'full'} />
+          </h1>
           <button
             type="button"
             className="deck__menu-toggle"
@@ -193,18 +205,15 @@ function Deck({ user, onLogout }: DeckProps) {
           albumName={cover.name}
           disabled={busy || !canPlay}
           onNeedleClick={() => void togglePlay()}
+          volume={volume.value}
+          volumeDisabled={!nowPlaying?.supportsVolume}
+          onVolumeChange={volume.change}
         />
         <div className="deck__info">
-          {cover.uri && (
-            <DiscDetails
-              key={cover.uri}
-              disc={{ uri: cover.uri, name: cover.name, imageUrl: cover.url }}
-              currentTrackId={nowPlaying?.trackId}
-            />
-          )}
           <NowPlaying nowPlaying={nowPlaying} />
         </div>
         {!canPlay && <p className="hint">Escolha um disco na estante e baixe a agulha.</p>}
+        <Footer />
       </section>
 
       <aside id="deck-menu" className="deck__menu" aria-label="Menu" hidden={collapsed}>
@@ -225,7 +234,18 @@ function Deck({ user, onLogout }: DeckProps) {
           onPrev={() => void run(prev, playing)}
           onNext={() => void run(next, playing)}
         />
-        <VolumeControl volume={nowPlaying?.volumePercent} supported={nowPlaying?.supportsVolume} />
+        <VolumeControl supported={nowPlaying?.supportsVolume} control={volume} />
+
+        {cover.uri && (
+          <>
+            <h2>Disco</h2>
+            <DiscDetails
+              key={cover.uri}
+              disc={{ uri: cover.uri, name: cover.name, imageUrl: cover.url }}
+              currentTrackId={nowPlaying?.trackId}
+            />
+          </>
+        )}
 
         <h2>Sons</h2>
         <AmbientSounds playing={playing} />

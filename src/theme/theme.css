@@ -7,14 +7,15 @@
   --panel: #211a16;
   --text: #f1e6d8;
   --muted: #a8998a;
-  --accent: #e0a458;
-  --on-accent: #1b130d;
+  /* Laranja da marca (BRAND.md). */
+  --accent: #e35634;
+  --on-accent: #1e1b18;
   --danger: #ff7a5c;
   --danger-bg: rgb(255 122 92 / 0.12);
   --border: rgb(255 255 255 / 0.13);
   --input-bg: #15100d;
   --hover: rgb(255 255 255 / 0.05);
-  --selected-bg: rgb(224 164 88 / 0.15);
+  --selected-bg: rgb(227 86 52 / 0.16);
   --track-bg: rgb(255 255 255 / 0.1);
   --placeholder: #333;
   --focus: #f0c674;
@@ -37,17 +38,17 @@
   --panel: #fbf6ef;
   --text: #2b211a;
   --muted: #7a6b5d;
-  --accent: #b86a1f;
-  --on-accent: #fffaf3;
+  --accent: #e35634;
+  --on-accent: #1e1b18;
   --danger: #b3361b;
   --danger-bg: rgb(179 54 27 / 0.1);
   --border: rgb(0 0 0 / 0.12);
   --input-bg: #ffffff;
   --hover: rgb(0 0 0 / 0.04);
-  --selected-bg: rgb(184 106 31 / 0.14);
+  --selected-bg: rgb(227 86 52 / 0.13);
   --track-bg: rgb(0 0 0 / 0.1);
   --placeholder: #ddd3c6;
-  --focus: #b86a1f;
+  --focus: #e35634;
   --backdrop: rgb(40 28 18 / 0.45);
 
   --shadow: rgb(60 40 20 / 0.32);
