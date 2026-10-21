@@ -1,17 +1,13 @@
 import { useState, type CSSProperties, type HTMLAttributes } from 'react';
 import { rectSortingStrategy, SortableContext, useSortable } from '@dnd-kit/sortable';
-import type { Category } from '../library/favorites';
 import { getMyPlaylists, type Disc } from '../spotify/api';
 import { errorMessage, SpotifyError } from '../spotify/errors';
-import { CategorySelect } from './CategorySelect';
 import { PlayOverlay } from './PlayOverlay';
 import './Shelf.css';
 
-type ShelfItem = Disc & { categoryId?: string | null };
-
 interface ShelfProps {
-  discs: ShelfItem[];
-  /** Nome da lista para leitores de tela (ex.: uma prateleira por categoria). */
+  discs: Disc[];
+  /** Nome da lista para leitores de tela. */
   label?: string;
   selectedId?: string;
   /** Clicar na capa (T40: abre os detalhes do disco). */
@@ -21,16 +17,12 @@ interface ShelfProps {
   onPlay?: () => void;
   playingId?: string;
   large?: boolean;
-  /** Com as duas: seletor de categoria sob cada capa. */
-  categories?: Category[];
-  onMoveDisc?: (discId: string, categoryId: string | null) => void;
   /** Capas arrastáveis (T39): precisa estar dentro de um DndContext. */
   sortable?: boolean;
 }
 
 interface SlotProps extends Omit<ShelfProps, 'discs' | 'label' | 'large' | 'sortable'> {
-  disc: ShelfItem;
-  tagged: boolean;
+  disc: Disc;
 }
 
 interface DragBindings {
@@ -40,21 +32,13 @@ interface DragBindings {
   handle?: HTMLAttributes<HTMLButtonElement>;
 }
 
-function SlotContent({ disc, tagged, selectedId, onSelect, onRemove, onPlay, playingId, categories, onMoveDisc, ref, style, dragging, handle }: SlotProps & DragBindings) {
+function SlotContent({ disc, selectedId, onSelect, onRemove, onPlay, playingId, ref, style, dragging, handle }: SlotProps & DragBindings) {
   return (
     <li
       ref={ref}
       style={style}
       className={`shelf__slot${disc.id === selectedId ? ' shelf__slot--selected' : ''}${dragging ? ' shelf__slot--dragging' : ''}`}
     >
-      {tagged && onMoveDisc && (
-        <CategorySelect
-          discName={disc.name}
-          value={disc.categoryId ?? null}
-          categories={categories ?? []}
-          onChange={(categoryId) => onMoveDisc(disc.id, categoryId)}
-        />
-      )}
       <button
         type="button"
         {...handle}
@@ -102,17 +86,16 @@ function SortableSlot(props: SlotProps) {
 }
 
 export function Shelf({ discs, label = 'Estante de discos', large, sortable, ...rest }: ShelfProps) {
-  const tagged = Boolean(rest.categories && rest.onMoveDisc);
   if (discs.length === 0) {
     return <p className="shelf__empty">Sua estante está vazia. Busque um disco e toque na ☆ para guardá-lo aqui.</p>;
   }
   const list = (
-    <ul className={`shelf${large ? ' shelf--large' : ''}${tagged ? ' shelf--tagged' : ''}`} aria-label={label}>
+    <ul className={`shelf${large ? ' shelf--large' : ''}`} aria-label={label}>
       {discs.map((disc) =>
         sortable ? (
-          <SortableSlot key={disc.id} disc={disc} tagged={tagged} {...rest} />
+          <SortableSlot key={disc.id} disc={disc} {...rest} />
         ) : (
-          <SlotContent key={disc.id} disc={disc} tagged={tagged} {...rest} />
+          <SlotContent key={disc.id} disc={disc} {...rest} />
         ),
       )}
     </ul>

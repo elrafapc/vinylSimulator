@@ -1,50 +1,51 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { Disc } from '../spotify/api';
 import {
+  activeFilter,
   addFavorite,
-  dropTarget,
-  moveDiscTo,
-  reorderDisc,
-  shelfDropId,
-  type Library,
   addFavorites,
-  createCategory,
-  deleteCategory,
+  addTag,
+  filterDiscs,
+  filterOptions,
+  allTags,
   getFavorites,
   getLibrary,
   isFavorite,
+  moveDisc,
   removeFavorite,
-  renameCategory,
-  setDiscCategory,
+  removeTag,
+  reorderDisc,
+  type Library,
 } from './favorites';
 
 const disc = (id: string): Disc => ({ id, uri: `spotify:album:${id}`, kind: 'album', name: `Disco ${id}`, artist: 'X' });
 const ids = () => getFavorites().map((d) => d.id);
+const tagsOf = (id: string) => getFavorites().find((d) => d.id === id)?.tags;
 const stored = () => JSON.parse(localStorage.getItem('vinil.library') ?? 'null');
 
 describe('estante', () => {
   beforeEach(() => localStorage.clear());
 
   it('começa vazia', () => {
-    expect(getLibrary()).toEqual({ version: 2, categories: [], discs: [] });
+    expect(getLibrary()).toEqual({ version: 3, discs: [] });
   });
 
-  it('adiciona na frente, em "Sem categoria", e persiste', () => {
+  it('adiciona na frente, sem etiquetas, e persiste', () => {
     addFavorite(disc('a'));
     addFavorite(disc('b'));
     expect(ids()).toEqual(['b', 'a']);
-    expect(getFavorites()[0].categoryId).toBeNull();
+    expect(tagsOf('b')).toEqual([]);
     expect(isFavorite('a')).toBe(true);
     expect(stored().discs).toHaveLength(2);
   });
 
-  it('não duplica: favoritar de novo traz para a frente e mantém a categoria', () => {
-    const jazz = createCategory('Jazz').categories[0].id;
-    addFavorite(disc('a'), jazz);
+  it('favoritar de novo traz para a frente e mantém as etiquetas', () => {
+    addFavorite(disc('a'));
+    addTag('a', 'Jazz');
     addFavorite(disc('b'));
     addFavorite(disc('a'));
     expect(ids()).toEqual(['a', 'b']);
-    expect(getFavorites()[0].categoryId).toBe(jazz);
+    expect(tagsOf('a')).toEqual(['Jazz']);
   });
 
   it('remove', () => {
@@ -54,78 +55,132 @@ describe('estante', () => {
     expect(isFavorite('a')).toBe(false);
   });
 
-  it('adiciona vários de uma vez sem duplicar nem perder categoria', () => {
-    const jazz = createCategory('Jazz').categories[0].id;
-    addFavorite(disc('a'), jazz);
+  it('adiciona vários de uma vez sem duplicar nem perder etiquetas', () => {
+    addFavorite(disc('a'));
+    addTag('a', 'Jazz');
     addFavorites([disc('b'), disc('a')]);
     expect(ids()).toEqual(['b', 'a']);
-    expect(getFavorites()[1].categoryId).toBe(jazz);
+    expect(tagsOf('a')).toEqual(['Jazz']);
   });
 });
 
-describe('categorias', () => {
-  beforeEach(() => localStorage.clear());
-
-  it('cria no fim, com nome limpo', () => {
-    createCategory('Jazz');
-    const lib = createCategory('  Para trabalhar ');
-    expect(lib.categories.map((c) => c.name)).toEqual(['Jazz', 'Para trabalhar']);
-    expect(new Set(lib.categories.map((c) => c.id)).size).toBe(2);
-  });
-
-  it('recusa nome vazio, longo, repetido (sem acento/maiúsculas) ou reservado', () => {
-    createCategory('Jazz');
-    expect(() => createCategory('   ')).toThrow('Dê um nome à categoria.');
-    expect(() => createCategory('x'.repeat(41))).toThrow('Use até 40 caracteres.');
-    expect(() => createCategory('JÁZZ')).toThrow('Já existe uma categoria "JÁZZ".');
-    expect(() => createCategory('sem categoria')).toThrow(/reservado/);
-    expect(getLibrary().categories).toHaveLength(1);
-  });
-
-  it('renomeia (inclusive mudando só maiúsculas) e recusa nome de outra', () => {
-    const [jazz] = createCategory('Jazz').categories;
-    createCategory('Rock');
-    expect(renameCategory(jazz.id, 'JAZZ').categories[0].name).toBe('JAZZ');
-    expect(() => renameCategory(jazz.id, 'rock')).toThrow(/Já existe/);
-  });
-
-  it('cada disco tem uma categoria; mover troca a categoria', () => {
-    const jazz = createCategory('Jazz').categories[0].id;
-    addFavorite(disc('a'));
-    expect(setDiscCategory('a', jazz).discs[0].categoryId).toBe(jazz);
-    expect(setDiscCategory('a', null).discs[0].categoryId).toBeNull();
-    expect(setDiscCategory('a', 'nao-existe').discs[0].categoryId).toBeNull();
-  });
-
-  it('excluir move os discos para "Sem categoria", na mesma ordem, sem apagar nenhum', () => {
-    const jazz = createCategory('Jazz').categories[0].id;
-    addFavorite(disc('a'), jazz);
+describe('etiquetas', () => {
+  beforeEach(() => {
+    localStorage.clear();
     addFavorite(disc('b'));
-    addFavorite(disc('c'), jazz);
-    const lib = deleteCategory(jazz);
-    expect(lib.categories).toEqual([]);
-    expect(lib.discs.map((d) => [d.id, d.categoryId])).toEqual([
-      ['c', null],
-      ['b', null],
-      ['a', null],
-    ]);
+    addFavorite(disc('a'));
+  });
+
+  it('várias por disco; cria ao adicionar', () => {
+    addTag('a', 'Jazz');
+    addTag('a', '  Para trabalhar ');
+    expect(tagsOf('a')).toEqual(['Jazz', 'Para trabalhar']);
+  });
+
+  it('sem duplicadas: ignora maiúsculas/acentos e mantém a 1ª grafia na coleção', () => {
+    addTag('a', 'Jázz');
+    addTag('a', 'jazz');
+    expect(tagsOf('a')).toEqual(['Jázz']);
+    addTag('b', 'JAZZ');
+    expect(tagsOf('b')).toEqual(['Jázz']);
+  });
+
+  it('recusa vazia, longa ou reservada', () => {
+    expect(() => addTag('a', '   ')).toThrow('Digite o nome da etiqueta.');
+    expect(() => addTag('a', 'x'.repeat(41))).toThrow('Use até 40 caracteres.');
+    expect(() => addTag('a', 'sem etiqueta')).toThrow(/reservado/);
+    expect(tagsOf('a')).toEqual([]);
+  });
+
+  it('remover (ignora maiúsculas/acentos)', () => {
+    addTag('a', 'Jazz');
+    addTag('a', 'Rock');
+    removeTag('a', 'JAZZ');
+    expect(tagsOf('a')).toEqual(['Rock']);
+  });
+
+  it('lista derivada dos discos, em ordem alfabética, e some quando ninguém usa', () => {
+    addTag('a', 'Rock');
+    addTag('b', 'Ária');
+    addTag('b', 'jazz');
+    expect(allTags(getLibrary())).toEqual(['Ária', 'jazz', 'Rock']);
+    removeTag('b', 'jazz');
+    expect(allTags(getLibrary())).toEqual(['Ária', 'Rock']);
+    removeFavorite('a');
+    expect(allTags(getLibrary())).toEqual(['Ária']);
   });
 });
 
-describe('migração e dados ruins', () => {
+describe('reordenar a coleção', () => {
+  const lib = (...list: string[]): Library => ({ version: 3, discs: list.map((id) => ({ ...disc(id), tags: [] })) });
+  const order = (l: Library) => l.discs.map((d) => d.id);
+
+  it('para frente e para trás (tirar e pôr na posição do outro)', () => {
+    expect(order(moveDisc(lib('a', 'b', 'c', 'd'), 'a', 'c'))).toEqual(['b', 'c', 'a', 'd']);
+    expect(order(moveDisc(lib('a', 'b', 'c', 'd'), 'd', 'b'))).toEqual(['a', 'd', 'b', 'c']);
+  });
+
+  it('em cima de si mesmo ou alvo desconhecido: nada muda', () => {
+    const l = lib('a', 'b');
+    expect(moveDisc(l, 'a', 'a')).toBe(l);
+    expect(moveDisc(l, 'a', 'zzz')).toBe(l);
+    expect(moveDisc(l, 'zzz', 'a')).toBe(l);
+  });
+
+  it('persiste (e o carrossel segue a mesma ordem)', () => {
+    localStorage.clear();
+    addFavorite(disc('b'));
+    addFavorite(disc('a'));
+    reorderDisc('a', 'b');
+    expect(ids()).toEqual(['b', 'a']);
+    expect(stored().discs.map((d: { id: string }) => d.id)).toEqual(['b', 'a']);
+  });
+});
+
+describe('migração', () => {
   beforeEach(() => localStorage.clear());
 
-  it('migra a lista antiga sem perda: mesma ordem, tudo em "Sem categoria", e guarda no formato novo', () => {
-    localStorage.setItem('vinil.favorites', JSON.stringify([disc('b'), disc('a')]));
+  it('v2 → v3: categoria vira etiqueta, "Sem categoria" vira nenhuma, na ordem da estante expandida', () => {
+    const v2 = {
+      version: 2,
+      categories: [{ id: 'c1', name: 'Jazz' }, { id: 'c2', name: 'Rock' }],
+      // Ordem crua (misturada): x(sem) r1(Rock) a1(Jazz) y(sem) b1(Jazz)
+      discs: [
+        { ...disc('x'), categoryId: null },
+        { ...disc('r1'), categoryId: 'c2' },
+        { ...disc('a1'), categoryId: 'c1' },
+        { ...disc('y'), categoryId: null },
+        { ...disc('b1'), categoryId: 'c1' },
+      ],
+    };
+    localStorage.setItem('vinil.library', JSON.stringify(v2));
     const lib = getLibrary();
-    expect(lib.categories).toEqual([]);
-    expect(lib.discs).toEqual([
-      { ...disc('b'), categoryId: null },
-      { ...disc('a'), categoryId: null },
+    // Prateleira Jazz (a1, b1), depois Rock (r1), depois Sem categoria (x, y).
+    expect(lib.discs.map((d) => [d.id, d.tags])).toEqual([
+      ['a1', ['Jazz']],
+      ['b1', ['Jazz']],
+      ['r1', ['Rock']],
+      ['x', []],
+      ['y', []],
     ]);
     expect(stored()).toEqual(lib);
-    // A antiga fica como cópia de segurança e não é mais lida.
-    expect(localStorage.getItem('vinil.favorites')).not.toBeNull();
+    expect(JSON.parse(localStorage.getItem('vinil.library.v2-backup') ?? 'null')).toEqual(v2);
+  });
+
+  it('v2: disco de categoria que não existe mais vira sem etiqueta', () => {
+    localStorage.setItem(
+      'vinil.library',
+      JSON.stringify({ version: 2, categories: [], discs: [{ ...disc('a'), categoryId: 'sumiu' }] }),
+    );
+    expect(getLibrary().discs[0].tags).toEqual([]);
+  });
+
+  it('v1 → v3: mesma ordem, sem etiquetas; a chave antiga fica e não é mais lida', () => {
+    localStorage.setItem('vinil.favorites', JSON.stringify([disc('b'), disc('a')]));
+    expect(getLibrary().discs).toEqual([
+      { ...disc('b'), tags: [] },
+      { ...disc('a'), tags: [] },
+    ]);
     localStorage.setItem('vinil.favorites', JSON.stringify([disc('z')]));
     expect(ids()).toEqual(['b', 'a']);
   });
@@ -138,85 +193,52 @@ describe('migração e dados ruins', () => {
     expect(ids()).toEqual(['a']);
   });
 
-  it('formato novo: descarta repetidos e solta discos de categoria inexistente', () => {
+  it('v3: descarta discos repetidos e etiquetas vazias/repetidas, unificando a grafia', () => {
     localStorage.setItem(
       'vinil.library',
       JSON.stringify({
-        version: 2,
-        categories: [{ id: 'c1', name: 'Jazz' }, { id: 'c2', name: 'jazz' }, { id: 'c3', name: '' }],
+        version: 3,
         discs: [
-          { ...disc('a'), categoryId: 'c1' },
-          { ...disc('a'), categoryId: null },
-          { ...disc('b'), categoryId: 'c2' },
+          { ...disc('a'), tags: ['Jazz', 'jazz', '', 7, 'Sem etiqueta'] },
+          { ...disc('a'), tags: ['Rock'] },
+          { ...disc('b'), tags: ['JAZZ'] },
         ],
       }),
     );
-    const lib = getLibrary();
-    expect(lib.categories).toEqual([{ id: 'c1', name: 'Jazz' }]);
-    expect(lib.discs.map((d) => [d.id, d.categoryId])).toEqual([
-      ['a', 'c1'],
-      ['b', null],
+    expect(getLibrary().discs.map((d) => [d.id, d.tags])).toEqual([
+      ['a', ['Jazz']],
+      ['b', ['Jazz']],
     ]);
   });
 });
 
-describe('reordenar (T39)', () => {
-  beforeEach(() => localStorage.clear());
-  const lib = (discs: Array<[string, string | null]>): Library => ({
-    version: 2,
-    categories: [{ id: 'c1', name: 'Jazz' }, { id: 'c2', name: 'Rock' }],
-    discs: discs.map(([id, categoryId]) => ({ ...disc(id), categoryId })),
-  });
-  const order = (l: Library) => l.discs.map((d) => `${d.id}:${d.categoryId ?? '-'}`);
+describe('filtro por etiquetas (T44)', () => {
+  const d = (id: string, ...tags: string[]) => ({ ...disc(id), tags });
+  const lib: Library = { version: 3, discs: [d('a', 'Jazz', 'Modal'), d('b', 'Jazz'), d('c'), d('d', 'Rock')] };
+  const ids2 = (list: { id: string }[]) => list.map((x) => x.id);
 
-  // Estante: a1 b1 (Jazz)  r1 (Rock)  x (Sem)  c1 (Jazz)
-  const base = lib([['a1', 'c1'], ['b1', 'c1'], ['r1', 'c2'], ['x', null], ['c1d', 'c1']]);
-
-  it('dentro da prateleira: para frente e para trás (como arrayMove)', () => {
-    // Jazz = a1, b1, c1d. Arrastar a1 para cima de c1d → b1, c1d, a1.
-    const t = dropTarget(base, 'a1', 'c1d')!;
-    expect(t).toEqual({ categoryId: 'c1', index: 2 });
-    expect(order(moveDiscTo(base, 'a1', t.categoryId, t.index)).filter((s) => s.endsWith(':c1'))).toEqual(['b1:c1', 'c1d:c1', 'a1:c1']);
-    // c1d para cima de a1 → c1d, a1, b1.
-    const back = dropTarget(base, 'c1d', 'a1')!;
-    expect(order(moveDiscTo(base, 'c1d', back.categoryId, back.index)).filter((s) => s.endsWith(':c1'))).toEqual(['c1d:c1', 'a1:c1', 'b1:c1']);
+  it('nada selecionado: todos', () => {
+    expect(ids2(filterDiscs(lib.discs, []))).toEqual(['a', 'b', 'c', 'd']);
   });
 
-  it('entre prateleiras: entra no lugar do disco de destino e troca de categoria', () => {
-    const t = dropTarget(base, 'x', 'r1')!;
-    expect(t).toEqual({ categoryId: 'c2', index: 0 });
-    const moved = moveDiscTo(base, 'x', t.categoryId, t.index);
-    expect(order(moved)).toEqual(['a1:c1', 'b1:c1', 'x:c2', 'r1:c2', 'c1d:c1']);
+  it('uma ou mais: só os discos com TODAS (ignora maiúsculas/acentos)', () => {
+    expect(ids2(filterDiscs(lib.discs, ['jazz']))).toEqual(['a', 'b']);
+    expect(ids2(filterDiscs(lib.discs, ['Jazz', 'MODAL']))).toEqual(['a']);
+    expect(ids2(filterDiscs(lib.discs, ['Jazz', 'Rock']))).toEqual([]);
   });
 
-  it('soltar na prateleira (vazia ou no fim dela)', () => {
-    const empty = lib([['a1', 'c1'], ['b1', 'c1']]);
-    const t = dropTarget(empty, 'a1', shelfDropId('c2'))!;
-    expect(t).toEqual({ categoryId: 'c2', index: 0 });
-    expect(order(moveDiscTo(empty, 'a1', 'c2', 0))).toEqual(['b1:c1', 'a1:c2']);
-    // Fim de "Sem categoria".
-    expect(dropTarget(base, 'a1', shelfDropId(null))).toEqual({ categoryId: null, index: 1 });
-    expect(order(moveDiscTo(base, 'a1', null, 1))).toEqual(['b1:c1', 'r1:c2', 'x:-', 'a1:-', 'c1d:c1']);
+  it('"Sem etiqueta": discos sem nenhuma; junto com outra, ninguém', () => {
+    expect(ids2(filterDiscs(lib.discs, ['Sem etiqueta']))).toEqual(['c']);
+    expect(ids2(filterDiscs(lib.discs, ['Sem etiqueta', 'Jazz']))).toEqual([]);
   });
 
-  it('soltar em cima de si mesmo ou em alvo desconhecido não faz nada', () => {
-    expect(dropTarget(base, 'a1', 'a1')).toBeNull();
-    expect(dropTarget(base, 'a1', 'nao-existe')).toBeNull();
-    expect(moveDiscTo(base, 'nao-existe', 'c1', 0)).toBe(base);
+  it('opções: etiquetas em uso + "Sem etiqueta" quando há disco sem; nada quando ninguém usa etiqueta', () => {
+    expect(filterOptions(lib)).toEqual(['Jazz', 'Modal', 'Rock', 'Sem etiqueta']);
+    expect(filterOptions({ version: 3, discs: [d('a', 'Jazz')] })).toEqual(['Jazz']);
+    expect(filterOptions({ version: 3, discs: [d('a')] })).toEqual([]);
   });
 
-  it('categoria inexistente vira "Sem categoria"; índice fora do limite vai para o fim', () => {
-    expect(order(moveDiscTo(base, 'a1', 'zzz', 99)).at(-2)).toBe('a1:-');
-  });
-
-  it('a ordem persiste e o carrossel (ordem da estante) segue', () => {
-    createCategory('Jazz');
-    const jazz = getLibrary().categories[0].id;
-    addFavorite(disc('b'), jazz);
-    addFavorite(disc('a'), jazz);
-    expect(ids()).toEqual(['a', 'b']);
-    reorderDisc('a', jazz, 1);
-    expect(ids()).toEqual(['b', 'a']);
-    expect(stored().discs.map((d: { id: string }) => d.id)).toEqual(['b', 'a']);
+  it('seleção perde etiquetas que sumiram', () => {
+    expect(activeFilter({ version: 3, discs: [d('a', 'Jazz')] }, ['Jazz', 'Rock', 'Sem etiqueta'])).toEqual(['Jazz']);
   });
 });

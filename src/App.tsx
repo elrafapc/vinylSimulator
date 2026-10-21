@@ -14,6 +14,7 @@ import { PlaylistImporter } from './components/Shelf';
 import { ShelfCarousel } from './components/ShelfCarousel';
 import { ShelfPanel } from './components/ShelfPanel';
 import { ShelfToggle } from './components/ShelfToggle';
+import { TagFilter } from './components/TagFilter';
 import { Turntable } from './components/Turntable';
 import { VolumeControl } from './components/VolumeControl';
 import { useFavorites } from './hooks/useFavorites';
@@ -22,6 +23,7 @@ import { useNowPlaying } from './hooks/useNowPlaying';
 import { useSidebar } from './hooks/useSidebar';
 import { useVolume } from './hooks/useVolume';
 import { completeDisc, currentDisc } from './library/currentDisc';
+import { tagKey } from './library/favorites';
 import { getMe, type Disc, type User } from './spotify/api';
 import { CLIENT_ID, handleCallback, isLoggedIn, login, logout } from './spotify/auth';
 import { errorMessage, SpotifyError } from './spotify/errors';
@@ -117,15 +119,15 @@ function Deck({ user, onLogout }: DeckProps) {
   const [selected, setSelected] = useState<Disc | null>(null);
   const {
     favorites,
-    categories,
     favoriteIds,
+    tags,
+    options: tagOptions,
+    applyFilter,
     toggle: toggleFavorite,
     remove: removeFavorite,
     addMany,
-    addCategory,
-    renameCategory,
-    removeCategory,
-    moveDisc,
+    tagDisc,
+    untagDisc,
     drop,
   } = useFavorites();
   const [actionError, setActionError] = useState<string | null>(null);
@@ -139,9 +141,28 @@ function Deck({ user, onLogout }: DeckProps) {
   // Sons começa sempre recolhido (não guarda a escolha).
   const [soundsOpen, setSoundsOpen] = useState(false);
   const closeShelf = useCallback(() => setShelfOpen(false), []);
-  // Detalhes de um disco da estante (T40): guardo o id e leio da estante, para refletir categoria/remoção.
+  // Detalhes de um disco da estante (T40): guardo o id e leio da estante, para refletir etiquetas/remoção.
   const [detailId, setDetailId] = useState<string | null>(null);
   const closeDetails = useCallback(() => setDetailId(null), []);
+  // Filtro por etiquetas (T44): o mesmo na estante expandida e no carrossel; vale só nesta sessão.
+  const [tagFilter, setTagFilter] = useState<string[]>([]);
+  const { active: activeTags, discs: visibleDiscs } = applyFilter(tagFilter);
+  const filtered = activeTags.length > 0;
+  const toggleTagFilter = (tag: string) =>
+    setTagFilter((current) =>
+      current.some((t) => tagKey(t) === tagKey(tag)) ? current.filter((t) => tagKey(t) !== tagKey(tag)) : [...current, tag],
+    );
+  const tagFilterChips = (compact?: boolean) => (
+    <TagFilter
+      compact={compact}
+      options={tagOptions}
+      selected={activeTags}
+      shown={visibleDiscs.length}
+      total={favorites.length}
+      onToggle={toggleTagFilter}
+      onClear={() => setTagFilter([])}
+    />
+  );
 
   useEffect(() => {
     if (!mobile || !sheetOpen) return;
@@ -343,8 +364,10 @@ function Deck({ user, onLogout }: DeckProps) {
 
         <h2>Estante</h2>
         <ShelfCarousel
-          discs={favorites}
-          categories={categories}
+          discs={visibleDiscs}
+          total={favorites.length}
+          filter={tagFilterChips(true)}
+          filtered={filtered}
           selectedId={selected?.id}
           onSelect={(disc) => setDetailId(disc.id)}
           onExpand={() => setShelfOpen(true)}
@@ -392,12 +415,10 @@ function Deck({ user, onLogout }: DeckProps) {
 
       {shelfOpen && (
         <ShelfPanel
-          discs={favorites}
-          categories={categories}
-          onCreateCategory={addCategory}
-          onRenameCategory={renameCategory}
-          onDeleteCategory={removeCategory}
-          onMoveDisc={moveDisc}
+          discs={visibleDiscs}
+          total={favorites.length}
+          filter={tagFilterChips()}
+          filtered={filtered}
           onDrop={drop}
           selectedId={selected?.id}
           playingId={playingId}
@@ -411,12 +432,13 @@ function Deck({ user, onLogout }: DeckProps) {
       {detailDisc && (
         <DiscDialog
           disc={detailDisc}
-          categories={categories}
+          allTags={tags}
           playing={playing && nowPlaying?.contextUri === detailDisc.uri}
           currentTrackId={nowPlaying?.contextUri === detailDisc.uri ? nowPlaying.trackId : undefined}
           onPlay={playFromShelf}
           onRemove={removeFavorite}
-          onMoveDisc={moveDisc}
+          onAddTag={tagDisc}
+          onRemoveTag={untagDisc}
           onClose={closeDetails}
         />
       )}

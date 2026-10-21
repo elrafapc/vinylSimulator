@@ -1,16 +1,17 @@
 import { useCallback, useMemo, useState } from 'react';
 import {
+  activeFilter,
   addFavorite,
   addFavorites,
-  CategoryError,
-  createCategory,
-  deleteCategory,
-  dropTarget,
+  addTag,
+  allTags,
+  filterDiscs,
+  filterOptions,
   getLibrary,
   removeFavorite,
-  renameCategory,
+  removeTag,
   reorderDisc,
-  setDiscCategory,
+  TagError,
   type Library,
 } from '../library/favorites';
 import type { Disc } from '../spotify/api';
@@ -19,6 +20,17 @@ export function useFavorites() {
   const [library, setLibrary] = useState<Library>(getLibrary);
   const favorites = library.discs;
   const favoriteIds = useMemo(() => new Set(favorites.map((f) => f.id)), [favorites]);
+  // Etiquetas em uso (derivadas dos discos): alimentam o autocompletar.
+  const tags = useMemo(() => allTags(library), [library]);
+  // Filtro por etiquetas (T44): opções disponíveis e o resultado para uma seleção.
+  const options = useMemo(() => filterOptions(library), [library]);
+  const applyFilter = useCallback(
+    (selected: string[]) => {
+      const active = activeFilter(library, selected);
+      return { active, discs: filterDiscs(library.discs, active) };
+    },
+    [library],
+  );
 
   const toggle = useCallback(
     (disc: Disc) => setLibrary(favoriteIds.has(disc.id) ? removeFavorite(disc.id) : addFavorite(disc)),
@@ -27,44 +39,20 @@ export function useFavorites() {
   const remove = useCallback((id: string) => setLibrary(removeFavorite(id)), []);
   const addMany = useCallback((discs: Disc[]) => setLibrary(addFavorites(discs)), []);
 
-  // Ações de categoria: devolvem a mensagem de erro (nome inválido/repetido) ou null.
-  const attempt = useCallback((action: () => Library): string | null => {
+  /** Devolve a mensagem de erro (nome inválido) ou null. */
+  const tagDisc = useCallback((discId: string, tag: string): string | null => {
     try {
-      setLibrary(action());
+      setLibrary(addTag(discId, tag));
       return null;
     } catch (e) {
-      if (e instanceof CategoryError) return e.message;
+      if (e instanceof TagError) return e.message;
       throw e;
     }
   }, []);
-  const addCategory = useCallback((name: string) => attempt(() => createCategory(name)), [attempt]);
-  const renameShelf = useCallback((id: string, name: string) => attempt(() => renameCategory(id, name)), [attempt]);
-  const removeCategory = useCallback((id: string) => setLibrary(deleteCategory(id)), []);
-  const moveDisc = useCallback(
-    (discId: string, categoryId: string | null) => setLibrary(setDiscCategory(discId, categoryId)),
-    [],
-  );
+  const untagDisc = useCallback((discId: string, tag: string) => setLibrary(removeTag(discId, tag)), []);
 
-  // Arrastar e soltar (T39): `overId` é outro disco ou uma prateleira (`shelf:…`).
-  const drop = useCallback(
-    (activeId: string, overId: string) => {
-      const target = dropTarget(library, activeId, overId);
-      if (target) setLibrary(reorderDisc(activeId, target.categoryId, target.index));
-    },
-    [library],
-  );
+  // Arrastar e soltar (T39/T43): o disco vai para a posição do disco `overId`.
+  const drop = useCallback((activeId: string, overId: string) => setLibrary(reorderDisc(activeId, overId)), []);
 
-  return {
-    favorites,
-    categories: library.categories,
-    favoriteIds,
-    toggle,
-    remove,
-    addMany,
-    addCategory,
-    renameCategory: renameShelf,
-    removeCategory,
-    moveDisc,
-    drop,
-  };
+  return { favorites, favoriteIds, tags, options, applyFilter, toggle, remove, addMany, tagDisc, untagDisc, drop };
 }

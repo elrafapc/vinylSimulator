@@ -237,120 +237,6 @@
   background: var(--hover);
 }
 
-/* Categorias (T38): uma prateleira por categoria na estante expandida. */
-.shelf-panel__tools {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-
-.shelf-row + .shelf-row {
-  margin-top: 24px;
-}
-
-.shelf-row__header {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 16px;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 10px;
-}
-
-.shelf-row__title {
-  margin: 0;
-  font-family: Georgia, serif;
-  font-size: 1.1rem;
-  font-weight: 400;
-}
-
-.shelf-row__count {
-  color: var(--muted);
-  font-family: ui-sans-serif, system-ui, sans-serif;
-  font-size: 0.85rem;
-}
-
-.shelf-row__actions {
-  display: flex;
-  gap: 4px;
-}
-
-.shelf-row__actions .link {
-  margin-left: 0;
-  padding: 4px 8px;
-  font-size: 0.85rem;
-}
-
-.shelf-row__confirm {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
-  margin-bottom: 12px;
-  padding: 10px 12px;
-  border-radius: 8px;
-  background: var(--danger-bg);
-}
-
-.shelf-row__confirm p {
-  flex-basis: 100%;
-  margin: 0 0 4px;
-  color: var(--text);
-  font-size: 0.9rem;
-}
-
-.shelf-row__empty {
-  margin: 0;
-  padding: 14px 16px;
-  border: 1px dashed var(--border);
-  border-radius: 8px;
-  color: var(--muted);
-  font-size: 0.85rem;
-}
-
-.category-form {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
-}
-
-.category-form .album-search__input {
-  width: auto;
-  flex: 1 1 200px;
-}
-
-.category-form__error {
-  flex-basis: 100%;
-  margin: 0;
-}
-
-/* Seletor de categoria acima de cada capa: a prateleira ganha altura para ele. */
-.shelf--tagged {
-  --row: calc(var(--cover) + var(--plank) + 44px);
-}
-
-.shelf--tagged .shelf__slot {
-  flex-direction: column;
-  justify-content: flex-end;
-  gap: 6px;
-}
-
-.shelf--tagged .shelf__remove {
-  top: 36px;
-}
-
-.shelf__category {
-  width: var(--cover);
-  padding: 3px 4px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--input-bg);
-  color: var(--text);
-  font: inherit;
-  font-size: 0.75rem;
-}
-
 /* Estante em carrossel no menu (T34). */
 .carousel {
   display: flex;
@@ -529,17 +415,9 @@
   }
 
   .carousel__chip,
-  .shelf__category,
-  .shelf-row__actions .link {
+  .tags__remove,
+  .tags__input {
     min-height: 44px;
-  }
-
-  .shelf--tagged {
-    --row: calc(var(--cover) + var(--plank) + 60px);
-  }
-
-  .shelf--tagged .shelf__remove {
-    top: 52px;
   }
 }
 
@@ -601,22 +479,7 @@
   filter: none;
 }
 
-.disc-dialog__category {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  color: var(--muted);
-  font-size: 0.85rem;
-}
 
-.disc-dialog__select {
-  padding: 6px 8px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--input-bg);
-  color: var(--text);
-  font: inherit;
-}
 
 .disc-dialog__actions .disc-dialog__remove {
   margin-left: auto;
@@ -638,21 +501,13 @@
 }
 
 @media (max-width: 767px), (pointer: coarse) {
-  .disc-dialog__select,
   .disc-dialog__actions .disc-dialog__remove {
     min-height: 44px;
   }
 }
 
 /* Arrastar para reorganizar (T39). */
-.shelf-row {
-  border-radius: 10px;
-  transition: box-shadow 0.15s;
-}
 
-.shelf-row--over {
-  box-shadow: 0 0 0 2px var(--accent);
-}
 
 .shelf-panel .shelf__disc {
   cursor: grab;
@@ -688,4 +543,112 @@
   .shelf-drag .shelf__spine {
     transform: none;
   }
+}
+
+/* Etiquetas nos detalhes do disco (T43). */
+.shelf-panel__count {
+  color: var(--muted);
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.9rem;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 16px;
+}
+
+.tags__label {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.tags__list {
+  display: contents;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tags__chip {
+  display: inline-flex;
+  gap: 2px;
+  align-items: center;
+  padding: 2px 4px 2px 10px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  background: var(--selected-bg);
+  color: var(--accent);
+  font-size: 0.85rem;
+}
+
+.tags__remove {
+  min-width: 24px;
+  padding: 0 4px;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: inherit;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.tags__remove:hover {
+  background: var(--hover);
+}
+
+.tags__input {
+  flex: 1 1 180px;
+  min-width: 0;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--input-bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.9rem;
+}
+
+.tags__error {
+  flex-basis: 100%;
+  margin: 0;
+}
+
+/* Filtro por etiquetas (T44): mesmos chips na estante expandida e no carrossel. */
+.tag-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.tag-filter--compact {
+  margin-bottom: 0;
+}
+
+.tag-filter__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tag-filter__status {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.tag-filter__status .tag-filter__clear {
+  margin-left: 0;
+}
+
+.shelf-panel__note {
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 0.8rem;
 }

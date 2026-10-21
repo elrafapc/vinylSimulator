@@ -4,6 +4,7 @@ import type { Disc } from '../spotify/api';
 import { useFavorites } from './useFavorites';
 
 const kob: Disc = { id: 'a1', uri: 'spotify:album:a1', kind: 'album', name: 'Kind of Blue', artist: 'Miles Davis' };
+const blue: Disc = { id: 'a2', uri: 'spotify:album:a2', kind: 'album', name: 'Blue Train', artist: 'John Coltrane' };
 
 describe('useFavorites', () => {
   beforeEach(() => localStorage.clear());
@@ -15,36 +16,37 @@ describe('useFavorites', () => {
     first.unmount();
 
     const { result } = renderHook(() => useFavorites());
-    expect(result.current.favorites).toEqual([{ ...kob, categoryId: null }]);
+    expect(result.current.favorites).toEqual([{ ...kob, tags: [] }]);
     act(() => result.current.toggle(kob));
     expect(result.current.favorites).toEqual([]);
   });
 
-  it('categorias: criar, mover disco, renomear, excluir; erro de nome vira mensagem', () => {
+  it('etiquetas: adicionar, erro vira mensagem, lista derivada e remover', () => {
     const { result } = renderHook(() => useFavorites());
     act(() => result.current.toggle(kob));
     let error: string | null = null;
     act(() => {
-      error = result.current.addCategory('Jazz');
+      error = result.current.tagDisc('a1', 'Jazz');
     });
     expect(error).toBeNull();
-    const jazz = result.current.categories[0].id;
-
-    act(() => result.current.moveDisc('a1', jazz));
-    expect(result.current.favorites[0].categoryId).toBe(jazz);
+    expect(result.current.favorites[0].tags).toEqual(['Jazz']);
+    expect(result.current.tags).toEqual(['Jazz']);
 
     act(() => {
-      error = result.current.addCategory('jazz');
+      error = result.current.tagDisc('a1', '   ');
     });
-    expect(error).toBe('Já existe uma categoria "jazz".');
+    expect(error).toBe('Digite o nome da etiqueta.');
 
-    act(() => {
-      error = result.current.renameCategory(jazz, 'Jazz modal');
-    });
-    expect(result.current.categories[0].name).toBe('Jazz modal');
+    act(() => result.current.untagDisc('a1', 'jazz'));
+    expect(result.current.tags).toEqual([]);
+  });
 
-    act(() => result.current.removeCategory(jazz));
-    expect(result.current.categories).toEqual([]);
-    expect(result.current.favorites[0].categoryId).toBeNull();
+  it('arrastar reordena a coleção', () => {
+    const { result } = renderHook(() => useFavorites());
+    act(() => result.current.toggle(kob));
+    act(() => result.current.toggle(blue));
+    expect(result.current.favorites.map((d) => d.id)).toEqual(['a2', 'a1']);
+    act(() => result.current.drop('a2', 'a1'));
+    expect(result.current.favorites.map((d) => d.id)).toEqual(['a1', 'a2']);
   });
 });

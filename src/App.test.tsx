@@ -163,9 +163,9 @@ describe('App', () => {
     localStorage.setItem('vinil.favorites', JSON.stringify([kindOfBlue]));
     render(<App />);
     await userEvent.click(await screen.findByRole('button', { name: 'Expandir estante (1)' }));
-    await userEvent.click(within(screen.getByRole('dialog', { name: 'Estante' })).getByRole('button', { name: 'Abrir Kind of Blue' }));
+    await userEvent.click(within(screen.getByRole('dialog', { name: /^Estante/ })).getByRole('button', { name: 'Abrir Kind of Blue' }));
     expect(screen.getByRole('dialog', { name: 'Detalhes de Kind of Blue' })).toBeInTheDocument();
-    expect(screen.getByRole('dialog', { name: 'Estante' })).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: /^Estante/ })).toBeInTheDocument();
     // Não tocou nem trocou o disco da vitrola.
     expect(playDisc).not.toHaveBeenCalled();
     expect(screen.getByRole('img', { name: 'Sem disco' })).toBeInTheDocument();
@@ -173,7 +173,7 @@ describe('App', () => {
     // Esc fecha só os detalhes; a estante continua aberta.
     await userEvent.keyboard('{Escape}');
     expect(screen.queryByRole('dialog', { name: 'Detalhes de Kind of Blue' })).not.toBeInTheDocument();
-    expect(screen.getByRole('dialog', { name: 'Estante' })).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: /^Estante/ })).toBeInTheDocument();
   });
 
   it('T17: play sobre o disco selecionado baixa a agulha', async () => {
@@ -251,17 +251,21 @@ describe('App', () => {
     expect(screen.getByTestId('turntable')).toHaveClass('turntable--playing');
   });
 
-  it('T40: nos detalhes dá para trocar a categoria e remover da estante', async () => {
+  it('T43: estante antiga (categorias) migra para etiquetas; nos detalhes dá para etiquetar e remover', async () => {
     localStorage.setItem(
       'vinil.library',
-      JSON.stringify({ version: 2, categories: [{ id: 'c1', name: 'Jazz' }], discs: [{ ...kindOfBlue, categoryId: null }] }),
+      JSON.stringify({ version: 2, categories: [{ id: 'c1', name: 'Jazz' }], discs: [{ ...kindOfBlue, categoryId: 'c1' }] }),
     );
     render(<App />);
     const carousel = await screen.findByRole('list', { name: 'Estante (carrossel)' });
     await userEvent.click(within(carousel).getByRole('button', { name: 'Abrir Kind of Blue' }));
     const details = screen.getByRole('dialog', { name: 'Detalhes de Kind of Blue' });
-    await userEvent.selectOptions(within(details).getByLabelText('Categoria de Kind of Blue'), 'Jazz');
-    expect(JSON.parse(localStorage.getItem('vinil.library') ?? '{}').discs[0].categoryId).toBe('c1');
+    expect(within(details).getByRole('list', { name: 'Etiquetas de Kind of Blue' })).toHaveTextContent('Jazz');
+
+    await userEvent.type(within(details).getByLabelText('Adicionar etiqueta a Kind of Blue'), 'Modal{Enter}');
+    expect(JSON.parse(localStorage.getItem('vinil.library') ?? '{}').discs[0].tags).toEqual(['Jazz', 'Modal']);
+    await userEvent.click(within(details).getByRole('button', { name: 'Remover etiqueta Jazz' }));
+    expect(JSON.parse(localStorage.getItem('vinil.library') ?? '{}').discs[0].tags).toEqual(['Modal']);
 
     await userEvent.click(within(details).getByRole('button', { name: 'Remover da estante' }));
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
@@ -330,5 +334,33 @@ describe('App', () => {
     const knob = await screen.findByRole('slider', { name: 'Volume (botão da vitrola)' });
     await waitFor(() => expect(knob).toHaveAttribute('aria-valuenow', '60'));
     expect(knob).not.toHaveAttribute('aria-disabled');
+  });
+
+  it('T44: filtro por etiquetas na estante, igual no carrossel; com filtro o arrastar desliga', async () => {
+    const d = (id: string, name: string, tags: string[]) => ({ id, uri: `spotify:album:${id}`, kind: 'album', name, artist: 'X', tags });
+    localStorage.setItem(
+      'vinil.library',
+      JSON.stringify({ version: 3, discs: [d('a1', 'Kind of Blue', ['Jazz', 'Modal']), d('a2', 'Blue Train', ['Jazz']), d('a3', 'Nevermind', [])] }),
+    );
+    render(<App />);
+    await userEvent.click(await screen.findByRole('button', { name: 'Expandir estante (3)' }));
+    const panel = screen.getByRole('dialog', { name: /^Estante/ });
+    expect(within(panel).getAllByRole('button', { pressed: false }).map((b) => b.textContent)).toEqual(
+      expect.arrayContaining(['Jazz', 'Modal', 'Sem etiqueta']),
+    );
+
+    await userEvent.click(within(panel).getByRole('button', { name: 'Jazz' }));
+    await userEvent.click(within(panel).getByRole('button', { name: 'Modal' }));
+    expect(within(panel).getByText('1 de 3 discos')).toBeInTheDocument();
+    expect(within(panel).getByRole('button', { name: 'Abrir Kind of Blue' })).not.toHaveAttribute('aria-roledescription');
+    expect(within(panel).queryByRole('button', { name: 'Abrir Blue Train' })).not.toBeInTheDocument();
+
+    // O carrossel do menu segue o mesmo filtro.
+    const carousel = screen.getByRole('list', { name: 'Estante (carrossel)' });
+    expect(within(carousel).getAllByRole('button').map((b) => b.getAttribute('aria-label'))).toEqual(['Abrir Kind of Blue']);
+
+    await userEvent.click(within(panel).getByRole('button', { name: 'Limpar filtro' }));
+    expect(within(panel).getByRole('button', { name: 'Abrir Blue Train' })).toHaveAttribute('aria-roledescription', 'sortable');
+    expect(within(carousel).getAllByRole('button')).toHaveLength(3);
   });
 });

@@ -1,23 +1,25 @@
 import { useEffect, useRef } from 'react';
-import type { Category, ShelfDisc } from '../library/favorites';
-import { CategorySelect } from './CategorySelect';
+import type { ShelfDisc } from '../library/favorites';
 import { DiscInfo } from './DiscDetails';
+import { TagInput } from './TagInput';
 
 interface DiscDialogProps {
   disc: ShelfDisc;
-  categories: Category[];
+  /** Etiquetas já usadas na estante (autocompletar). */
+  allTags: string[];
   /** O disco já está tocando agora (o botão vira "Tocando"). */
   playing?: boolean;
   currentTrackId?: string;
   onPlay: (disc: ShelfDisc) => void;
   onRemove: (id: string) => void;
-  onMoveDisc: (discId: string, categoryId: string | null) => void;
+  onAddTag: (discId: string, tag: string) => string | null;
+  onRemoveTag: (discId: string, tag: string) => void;
   onClose: () => void;
 }
 
-// Detalhes de um disco da estante (T40): capa grande + faixas, Tocar, Remover e categoria.
+// Detalhes de um disco da estante (T40): capa grande + faixas, Tocar, Remover e etiquetas (T43).
 // Abre por cima da estante expandida; Esc fecha só ele.
-export function DiscDialog({ disc, categories, playing, currentTrackId, onPlay, onRemove, onMoveDisc, onClose }: DiscDialogProps) {
+export function DiscDialog({ disc, allTags, playing, currentTrackId, onPlay, onRemove, onAddTag, onRemoveTag, onClose }: DiscDialogProps) {
   const playRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => playRef.current?.focus(), []);
@@ -60,20 +62,17 @@ export function DiscDialog({ disc, categories, playing, currentTrackId, onPlay, 
           >
             {playing ? 'Tocando' : '▶ Tocar'}
           </button>
-          <label className="disc-dialog__category">
-            Categoria
-            <CategorySelect
-              className="disc-dialog__select"
-              discName={disc.name}
-              value={disc.categoryId}
-              categories={categories}
-              onChange={(categoryId) => onMoveDisc(disc.id, categoryId)}
-            />
-          </label>
           <button type="button" className="link disc-dialog__remove" onClick={() => onRemove(disc.id)}>
             Remover da estante
           </button>
         </div>
+        <TagInput
+          discName={disc.name}
+          tags={disc.tags}
+          suggestions={allTags}
+          onAdd={(tag) => onAddTag(disc.id, tag)}
+          onRemove={(tag) => onRemoveTag(disc.id, tag)}
+        />
       </div>
     </div>
   );

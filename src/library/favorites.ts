@@ -1,32 +1,27 @@
 import type { Disc } from '../spotify/api';
 
-// v2 (T38): discos + categorias (prateleiras). A chave antiga fica como cópia de segurança, sem ser lida de novo.
+// v3 (T43): uma coleção só; cada disco tem várias etiquetas. A lista de etiquetas é derivada dos discos.
 const STORAGE_KEY = 'vinil.library';
+const V2_BACKUP_KEY = 'vinil.library.v2-backup';
 const LEGACY_KEY = 'vinil.favorites';
 
-export const UNCATEGORIZED = 'Sem categoria';
-export const MAX_CATEGORY_NAME = 40;
+/** Reservado para o filtro "Sem etiqueta" (T44). */
+export const NO_TAG = 'Sem etiqueta';
+export const MAX_TAG = 40;
 
-export interface Category {
-  id: string;
-  name: string;
-}
-
-/** Disco da estante: `categoryId` null = "Sem categoria". */
-export type ShelfDisc = Disc & { categoryId: string | null };
+/** Disco da estante com suas etiquetas (`[]` = sem etiqueta). */
+export type ShelfDisc = Disc & { tags: string[] };
 
 export interface Library {
-  version: 2;
-  /** Ordem das prateleiras. */
-  categories: Category[];
-  /** Ordem dos discos = ordem na estante. */
+  version: 3;
+  /** Ordem dos discos = ordem na estante e no carrossel. */
   discs: ShelfDisc[];
 }
 
-export class CategoryError extends Error {
+export class TagError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = 'CategoryError';
+    this.name = 'TagError';
   }
 }
 
@@ -42,41 +37,39 @@ function isDisc(value: unknown): value is Disc {
   );
 }
 
-function isCategory(value: unknown): value is Category {
-  const v = value as Partial<Category> | null;
-  return typeof v === 'object' && v !== null && typeof v.id === 'string' && typeof v.name === 'string';
+// Sem acento e sem diferenciar maiúsculas: "Jazz" e "jázz" são a mesma etiqueta.
+export function tagKey(tag: string): string {
+  return tag.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
 }
 
-// Sem acento e sem diferenciar maiúsculas: "Jazz" e "jázz" são o mesmo nome.
-function nameKey(name: string): string {
-  return name.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
-}
-
-function toShelfDisc(disc: Disc, categoryId: string | null): ShelfDisc {
+function toShelfDisc(disc: Disc, tags: string[]): ShelfDisc {
   const { id, uri, kind, name, artist, imageUrl } = disc;
-  return { id, uri, kind, name, artist, imageUrl, categoryId };
+  return { id, uri, kind, name, artist, imageUrl, tags };
 }
 
-// Leitura defensiva: ignora entradas inválidas, discos repetidos, categorias de nome repetido
-// e aponta para "Sem categoria" discos cuja categoria não existe mais.
-function sanitize(rawCategories: unknown, rawDiscs: unknown): Library {
-  const categories: Category[] = [];
-  const names = new Set<string>();
-  for (const c of Array.isArray(rawCategories) ? rawCategories : []) {
-    if (!isCategory(c) || !c.name.trim() || names.has(nameKey(c.name)) || nameKey(c.name) === nameKey(UNCATEGORIZED)) continue;
-    names.add(nameKey(c.name));
-    categories.push({ id: c.id, name: c.name.trim() });
-  }
-  const ids = new Set(categories.map((c) => c.id));
+// Leitura defensiva: discos inválidos/repetidos saem; etiquetas vazias, longas ou repetidas também.
+// Na coleção toda vale a 1ª grafia vista de cada etiqueta.
+function sanitize(rawDiscs: Array<{ disc: unknown; tags: unknown }>): Library {
+  const spelling = new Map<string, string>();
   const seen = new Set<string>();
   const discs: ShelfDisc[] = [];
-  for (const d of Array.isArray(rawDiscs) ? rawDiscs : []) {
-    if (!isDisc(d) || seen.has(d.id)) continue;
-    seen.add(d.id);
-    const categoryId = (d as Partial<ShelfDisc>).categoryId;
-    discs.push(toShelfDisc(d, typeof categoryId === 'string' && ids.has(categoryId) ? categoryId : null));
+  for (const { disc, tags } of rawDiscs) {
+    if (!isDisc(disc) || seen.has(disc.id)) continue;
+    seen.add(disc.id);
+    const own = new Set<string>();
+    const clean: string[] = [];
+    for (const t of Array.isArray(tags) ? tags : []) {
+      if (typeof t !== 'string') continue;
+      const trimmed = t.trim();
+      const key = tagKey(trimmed);
+      if (!trimmed || trimmed.length > MAX_TAG || key === tagKey(NO_TAG) || own.has(key)) continue;
+      own.add(key);
+      if (!spelling.has(key)) spelling.set(key, trimmed);
+      clean.push(spelling.get(key)!);
+    }
+    discs.push(toShelfDisc(disc, clean));
   }
-  return { version: 2, categories, discs };
+  return { version: 3, discs };
 }
 
 function parse(key: string): unknown {
@@ -97,15 +90,49 @@ function save(library: Library): Library {
   return library;
 }
 
+interface V2 {
+  version: 2;
+  categories?: Array<{ id?: unknown; name?: unknown }>;
+  discs?: Array<Disc & { categoryId?: unknown }>;
+}
+
+// v2 → v3: categoria vira etiqueta; "Sem categoria" vira nenhuma. Ordem = a da estante expandida da v2:
+// prateleira por prateleira (na ordem das categorias), "Sem categoria" por último; dentro de cada uma, a ordem salva.
+function fromV2(v2: V2): Library {
+  const categories = (Array.isArray(v2.categories) ? v2.categories : []).filter(
+    (c): c is { id: string; name: string } => typeof c?.id === 'string' && typeof c?.name === 'string' && c.name.trim() !== '',
+  );
+  const discs = Array.isArray(v2.discs) ? v2.discs : [];
+  const known = new Set(categories.map((c) => c.id));
+  const ordered = [
+    ...categories.flatMap((c) => discs.filter((d) => d?.categoryId === c.id).map((d) => ({ disc: d, tags: [c.name] }))),
+    ...discs.filter((d) => !known.has(d?.categoryId as string)).map((d) => ({ disc: d, tags: [] })),
+  ];
+  return sanitize(ordered);
+}
+
 export function getLibrary(): Library {
-  const current = parse(STORAGE_KEY) as Partial<Library> | null | undefined;
-  if (current && typeof current === 'object' && current.version === 2) {
-    return sanitize(current.categories, current.discs);
+  const current = parse(STORAGE_KEY) as { version?: unknown; discs?: unknown } | null | undefined;
+  if (current && typeof current === 'object') {
+    if (current.version === 3) {
+      const discs = Array.isArray(current.discs) ? current.discs : [];
+      return sanitize(discs.map((d: { tags?: unknown }) => ({ disc: d, tags: d?.tags })));
+    }
+    if (current.version === 2) {
+      try {
+        localStorage.setItem(V2_BACKUP_KEY, JSON.stringify(current));
+      } catch {
+        // sem storage: segue só com a migração em memória
+      }
+      return save(fromV2(current as V2));
+    }
   }
-  // Migração v1 → v2: a lista antiga vira a estante, na mesma ordem, tudo em "Sem categoria".
+  // v1 → v3: a lista antiga vira a estante, na mesma ordem, sem etiquetas.
   const legacy = parse(LEGACY_KEY);
-  if (legacy !== undefined) return save(sanitize([], legacy));
-  return { version: 2, categories: [], discs: [] };
+  if (legacy !== undefined) {
+    return save(sanitize((Array.isArray(legacy) ? legacy : []).map((d) => ({ disc: d, tags: [] }))));
+  }
+  return { version: 3, discs: [] };
 }
 
 export function getFavorites(): ShelfDisc[] {
@@ -116,18 +143,17 @@ export function isFavorite(id: string): boolean {
   return getFavorites().some((f) => f.id === id);
 }
 
-// O mais recente entra na frente da estante; se já estava, mantém a categoria.
-export function addFavorite(disc: Disc, categoryId: string | null = null): Library {
+// O mais recente entra na frente da estante; se já estava, mantém as etiquetas.
+export function addFavorite(disc: Disc): Library {
   const lib = getLibrary();
-  const existing = lib.discs.find((d) => d.id === disc.id);
-  const target = existing ? existing.categoryId : lib.categories.some((c) => c.id === categoryId) ? categoryId : null;
-  return save({ ...lib, discs: [toShelfDisc(disc, target), ...lib.discs.filter((d) => d.id !== disc.id)] });
+  const tags = lib.discs.find((d) => d.id === disc.id)?.tags ?? [];
+  return save({ ...lib, discs: [toShelfDisc(disc, tags), ...lib.discs.filter((d) => d.id !== disc.id)] });
 }
 
 export function addFavorites(discs: Disc[]): Library {
   const lib = getLibrary();
   const byId = new Map(lib.discs.map((d) => [d.id, d]));
-  const added = discs.map((d) => toShelfDisc(d, byId.get(d.id)?.categoryId ?? null));
+  const added = discs.map((d) => toShelfDisc(d, byId.get(d.id)?.tags ?? []));
   const ids = new Set(added.map((d) => d.id));
   return save({ ...lib, discs: [...added, ...lib.discs.filter((d) => !ids.has(d.id))] });
 }
@@ -137,96 +163,86 @@ export function removeFavorite(id: string): Library {
   return save({ ...lib, discs: lib.discs.filter((d) => d.id !== id) });
 }
 
-function validName(name: string, categories: Category[], exceptId?: string): string {
-  const trimmed = name.trim();
-  if (!trimmed) throw new CategoryError('Dê um nome à categoria.');
-  if (trimmed.length > MAX_CATEGORY_NAME) throw new CategoryError(`Use até ${MAX_CATEGORY_NAME} caracteres.`);
-  const key = nameKey(trimmed);
-  if (key === nameKey(UNCATEGORIZED)) throw new CategoryError(`"${UNCATEGORIZED}" é reservado.`);
-  if (categories.some((c) => c.id !== exceptId && nameKey(c.name) === key)) {
-    throw new CategoryError(`Já existe uma categoria "${trimmed}".`);
-  }
-  return trimmed;
+/** Todas as etiquetas em uso (1ª grafia), em ordem alfabética sem acento. Some quando nenhum disco usa. */
+export function allTags(library: Library): string[] {
+  const byKey = new Map<string, string>();
+  for (const d of library.discs) for (const t of d.tags) if (!byKey.has(tagKey(t))) byKey.set(tagKey(t), t);
+  return [...byKey.values()].sort((a, b) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' }));
 }
 
-function newCategoryId(): string {
-  return `cat-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
-}
-
-/** Nova prateleira no fim. Lança CategoryError se o nome for inválido ou repetido. */
-export function createCategory(name: string): Library {
+/**
+ * Adiciona a etiqueta ao disco (cria se não existir). Usa a grafia já existente na coleção.
+ * Lança TagError se o nome for inválido; repetida no mesmo disco não faz nada.
+ */
+export function addTag(discId: string, tag: string): Library {
   const lib = getLibrary();
-  const category = { id: newCategoryId(), name: validName(name, lib.categories) };
-  return save({ ...lib, categories: [...lib.categories, category] });
-}
-
-export function renameCategory(id: string, name: string): Library {
-  const lib = getLibrary();
-  if (!lib.categories.some((c) => c.id === id)) throw new CategoryError('Categoria não encontrada.');
-  const valid = validName(name, lib.categories, id);
-  return save({ ...lib, categories: lib.categories.map((c) => (c.id === id ? { ...c, name: valid } : c)) });
-}
-
-// Excluir não apaga discos: eles vão para "Sem categoria", na mesma ordem.
-export function deleteCategory(id: string): Library {
-  const lib = getLibrary();
+  const trimmed = tag.trim();
+  if (!trimmed) throw new TagError('Digite o nome da etiqueta.');
+  if (trimmed.length > MAX_TAG) throw new TagError(`Use até ${MAX_TAG} caracteres.`);
+  const key = tagKey(trimmed);
+  if (key === tagKey(NO_TAG)) throw new TagError(`"${NO_TAG}" é reservado.`);
+  const existing = allTags(lib).find((t) => tagKey(t) === key) ?? trimmed;
   return save({
     ...lib,
-    categories: lib.categories.filter((c) => c.id !== id),
-    discs: lib.discs.map((d) => (d.categoryId === id ? { ...d, categoryId: null } : d)),
+    discs: lib.discs.map((d) =>
+      d.id === discId && !d.tags.some((t) => tagKey(t) === key) ? { ...d, tags: [...d.tags, existing] } : d,
+    ),
   });
 }
 
-export function setDiscCategory(discId: string, categoryId: string | null): Library {
+export function removeTag(discId: string, tag: string): Library {
   const lib = getLibrary();
-  const target = categoryId !== null && lib.categories.some((c) => c.id === categoryId) ? categoryId : null;
-  return save({ ...lib, discs: lib.discs.map((d) => (d.id === discId ? { ...d, categoryId: target } : d)) });
+  const key = tagKey(tag);
+  return save({
+    ...lib,
+    discs: lib.discs.map((d) => (d.id === discId ? { ...d, tags: d.tags.filter((t) => tagKey(t) !== key) } : d)),
+  });
 }
 
 /**
- * Coloca o disco na prateleira `categoryId` (null = "Sem categoria"), na posição `index` dela (T39).
- * A ordem do array é a ordem da estante: o disco entra antes do disco que hoje ocupa `index` na prateleira
- * de destino (contando sem ele mesmo), ou logo depois do último dela; prateleira vazia → fim da estante.
+ * Reordena a coleção (T39/T43): o disco arrastado vai para a posição do disco `overId`
+ * (tirar e pôr, como arrayMove). Alvo desconhecido ou o próprio disco: nada muda.
  */
-export function moveDiscTo(library: Library, discId: string, categoryId: string | null, index: number): Library {
-  const disc = library.discs.find((d) => d.id === discId);
-  if (!disc) return library;
-  const target = categoryId !== null && library.categories.some((c) => c.id === categoryId) ? categoryId : null;
-  const rest = library.discs.filter((d) => d.id !== discId);
-  const shelf = rest.filter((d) => d.categoryId === target);
-  const moved = { ...disc, categoryId: target };
-  const clamped = Math.max(0, Math.min(index, shelf.length));
-  let at: number;
-  if (clamped < shelf.length) at = rest.indexOf(shelf[clamped]);
-  else if (shelf.length > 0) at = rest.indexOf(shelf[shelf.length - 1]) + 1;
-  else at = rest.length;
-  return { ...library, discs: [...rest.slice(0, at), moved, ...rest.slice(at)] };
+export function moveDisc(library: Library, activeId: string, overId: string): Library {
+  const from = library.discs.findIndex((d) => d.id === activeId);
+  const to = library.discs.findIndex((d) => d.id === overId);
+  if (from < 0 || to < 0 || from === to) return library;
+  const discs = [...library.discs];
+  const [moved] = discs.splice(from, 1);
+  discs.splice(to, 0, moved);
+  return { ...library, discs };
 }
 
 /** Versão que lê e grava a estante. */
-export function reorderDisc(discId: string, categoryId: string | null, index: number): Library {
-  return save(moveDiscTo(getLibrary(), discId, categoryId, index));
-}
-
-/** Id da prateleira como alvo de soltura (prateleira vazia ou o fim dela). */
-export function shelfDropId(categoryId: string | null): string {
-  return `shelf:${categoryId ?? ''}`;
+export function reorderDisc(activeId: string, overId: string): Library {
+  return save(moveDisc(getLibrary(), activeId, overId));
 }
 
 /**
- * Onde soltar: `overId` é um disco (entra no lugar dele) ou uma prateleira (`shelf:…`, entra no fim).
- * Dentro da mesma prateleira, equivale a "tirar e pôr na posição do outro" (como arrayMove).
+ * Filtro por etiquetas (T44): o disco precisa ter TODAS as selecionadas (ignora maiúsculas/acentos).
+ * `NO_TAG` ("Sem etiqueta") seleciona discos sem nenhuma etiqueta. Nada selecionado = todos.
  */
-export function dropTarget(library: Library, activeId: string, overId: string): { categoryId: string | null; index: number } | null {
-  if (activeId === overId) return null;
-  if (overId.startsWith('shelf:')) {
-    const raw = overId.slice('shelf:'.length);
-    const categoryId = raw === '' ? null : raw;
-    const size = library.discs.filter((d) => d.categoryId === categoryId && d.id !== activeId).length;
-    return { categoryId, index: size };
-  }
-  const over = library.discs.find((d) => d.id === overId);
-  if (!over) return null;
-  const shelf = library.discs.filter((d) => d.categoryId === over.categoryId);
-  return { categoryId: over.categoryId, index: shelf.findIndex((d) => d.id === overId) };
+export function filterDiscs<T extends { tags: string[] }>(discs: T[], selected: string[]): T[] {
+  if (selected.length === 0) return discs;
+  const wanted = selected.map(tagKey);
+  const untagged = wanted.includes(tagKey(NO_TAG));
+  const others = wanted.filter((k) => k !== tagKey(NO_TAG));
+  return discs.filter((d) => {
+    const own = new Set(d.tags.map(tagKey));
+    if (untagged && own.size > 0) return false;
+    return others.every((k) => own.has(k));
+  });
+}
+
+/** Opções do filtro: as etiquetas em uso + "Sem etiqueta" (se algum disco não tem). Vazio se ninguém usa etiqueta. */
+export function filterOptions(library: Library): string[] {
+  const tags = allTags(library);
+  if (tags.length === 0) return [];
+  return library.discs.some((d) => d.tags.length === 0) ? [...tags, NO_TAG] : tags;
+}
+
+/** Tira do filtro as etiquetas que deixaram de existir (ex.: removidas do último disco). */
+export function activeFilter(library: Library, selected: string[]): string[] {
+  const options = new Set(filterOptions(library).map(tagKey));
+  return selected.filter((t) => options.has(tagKey(t)));
 }

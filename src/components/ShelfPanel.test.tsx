@@ -1,99 +1,35 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
-import type { Category, ShelfDisc } from '../library/favorites';
+import type { ShelfDisc } from '../library/favorites';
 import { ShelfPanel } from './ShelfPanel';
 
 vi.mock('../spotify/api', () => ({ getMyPlaylists: vi.fn() }));
 
-const jazz: Category = { id: 'c1', name: 'Jazz' };
-const rock: Category = { id: 'c2', name: 'Rock' };
-const kob: ShelfDisc = { id: 'a1', uri: 'spotify:album:a1', kind: 'album', name: 'Kind of Blue', artist: 'Miles Davis', imageUrl: 'https://img/kob.jpg', categoryId: 'c1' };
-const loose: ShelfDisc = { id: 'a2', uri: 'spotify:album:a2', kind: 'album', name: 'Nevermind', artist: 'Nirvana', categoryId: null };
+const kob: ShelfDisc = { id: 'a1', uri: 'spotify:album:a1', kind: 'album', name: 'Kind of Blue', artist: 'Miles Davis', imageUrl: 'https://img/kob.jpg', tags: ['Jazz'] };
+const nevermind: ShelfDisc = { id: 'a2', uri: 'spotify:album:a2', kind: 'album', name: 'Nevermind', artist: 'Nirvana', tags: [] };
 
-function setup({ discs = [kob, loose], categories = [jazz, rock], selectedId }: { discs?: ShelfDisc[]; categories?: Category[]; selectedId?: string } = {}) {
-  const props = {
-    onSelect: vi.fn(),
-    onRemove: vi.fn(),
-    onPlay: vi.fn(),
-    onClose: vi.fn(),
-    onCreateCategory: vi.fn<(name: string) => string | null>(() => null),
-    onRenameCategory: vi.fn<(id: string, name: string) => string | null>(() => null),
-    onDeleteCategory: vi.fn(),
-    onMoveDisc: vi.fn(),
-    onDrop: vi.fn(),
-  };
-  render(<ShelfPanel discs={discs} categories={categories} selectedId={selectedId} {...props} />);
+function setup({ discs = [kob, nevermind], selectedId }: { discs?: ShelfDisc[]; selectedId?: string } = {}) {
+  const props = { onSelect: vi.fn(), onRemove: vi.fn(), onPlay: vi.fn(), onClose: vi.fn(), onDrop: vi.fn() };
+  render(<ShelfPanel discs={discs} selectedId={selectedId} {...props} />);
   return props;
 }
 
-const shelf = (name: string) => screen.getByRole('region', { name: `Prateleira ${name}` });
-
 describe('ShelfPanel', () => {
-  it('abre como diálogo com capas grandes', () => {
+  it('uma coleção só, com capas grandes e contagem', () => {
     setup();
-    expect(screen.getByRole('dialog', { name: 'Estante' })).toBeInTheDocument();
-    expect(screen.getByRole('list', { name: 'Discos em Jazz' })).toHaveClass('shelf--large');
+    expect(screen.getByRole('dialog', { name: /Estante/ })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Estante (2)' })).toBeInTheDocument();
+    expect(screen.getAllByRole('list', { name: 'Estante de discos' })).toHaveLength(1);
+    expect(screen.getByRole('list', { name: 'Estante de discos' })).toHaveClass('shelf--large');
   });
 
-  it('uma prateleira por categoria, com nome e contagem, e "Sem categoria" por último', () => {
+  it('sem categorias: nada de "+ Nova categoria", prateleiras nomeadas, seletores ou etiquetas nas capas', () => {
     setup();
-    const titles = screen.getAllByRole('heading', { level: 3 }).map((h) => h.textContent);
-    expect(titles).toEqual(['Jazz (1)', 'Rock (0)', 'Sem categoria (1)']);
-    expect(within(shelf('Rock')).getByText(/Nenhum disco nesta prateleira/)).toBeInTheDocument();
-    expect(within(shelf('Sem categoria')).queryByRole('button', { name: 'Renomear' })).not.toBeInTheDocument();
-  });
-
-  it('"Sem categoria" some quando não tem discos', () => {
-    setup({ discs: [kob] });
-    expect(screen.queryByRole('region', { name: 'Prateleira Sem categoria' })).not.toBeInTheDocument();
-  });
-
-  it('criar categoria; erro de nome aparece e mantém o formulário', async () => {
-    const props = setup();
-    props.onCreateCategory.mockReturnValueOnce('Já existe uma categoria "jazz".');
-    await userEvent.click(screen.getByRole('button', { name: '+ Nova categoria' }));
-    await userEvent.type(screen.getByLabelText('Nome da nova categoria'), 'jazz{Enter}');
-    expect(screen.getByText('Já existe uma categoria "jazz".')).toBeInTheDocument();
-    await userEvent.clear(screen.getByLabelText('Nome da nova categoria'));
-    await userEvent.type(screen.getByLabelText('Nome da nova categoria'), 'Samba{Enter}');
-    expect(props.onCreateCategory).toHaveBeenLastCalledWith('Samba');
-    expect(screen.queryByLabelText('Nome da nova categoria')).not.toBeInTheDocument();
-  });
-
-  it('renomear; Esc no campo cancela sem fechar a estante', async () => {
-    const props = setup();
-    await userEvent.click(within(shelf('Jazz')).getByRole('button', { name: 'Renomear' }));
-    await userEvent.keyboard('{Escape}');
-    expect(props.onClose).not.toHaveBeenCalled();
-    expect(screen.queryByLabelText('Novo nome para Jazz')).not.toBeInTheDocument();
-
-    await userEvent.click(within(shelf('Jazz')).getByRole('button', { name: 'Renomear' }));
-    const input = screen.getByLabelText('Novo nome para Jazz');
-    await userEvent.clear(input);
-    await userEvent.type(input, 'Jazz modal{Enter}');
-    expect(props.onRenameCategory).toHaveBeenCalledWith('c1', 'Jazz modal');
-  });
-
-  it('excluir pede confirmação dizendo para onde vão os discos', async () => {
-    const props = setup();
-    await userEvent.click(within(shelf('Jazz')).getByRole('button', { name: 'Excluir' }));
-    const confirm = screen.getByRole('alertdialog', { name: 'Excluir Jazz' });
-    expect(confirm).toHaveTextContent('O disco vai para "Sem categoria".');
-    await userEvent.click(within(confirm).getByRole('button', { name: 'Cancelar' }));
-    expect(props.onDeleteCategory).not.toHaveBeenCalled();
-    await userEvent.click(within(shelf('Jazz')).getByRole('button', { name: 'Excluir' }));
-    await userEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Excluir' }));
-    expect(props.onDeleteCategory).toHaveBeenCalledWith('c1');
-  });
-
-  it('seletor sob a capa move o disco de categoria, sem fechar a estante', async () => {
-    const props = setup();
-    await userEvent.selectOptions(screen.getByLabelText('Categoria de Nevermind'), 'Rock');
-    expect(props.onMoveDisc).toHaveBeenCalledWith('a2', 'c2');
-    await userEvent.selectOptions(screen.getByLabelText('Categoria de Kind of Blue'), 'Sem categoria');
-    expect(props.onMoveDisc).toHaveBeenLastCalledWith('a1', null);
-    expect(props.onClose).not.toHaveBeenCalled();
+    expect(screen.queryByRole('button', { name: /Nova categoria/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: /Prateleira/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
+    expect(screen.queryByText('Jazz')).not.toBeInTheDocument();
   });
 
   it('clicar num disco abre os detalhes (onSelect) sem fechar a estante', async () => {
@@ -105,7 +41,7 @@ describe('ShelfPanel', () => {
 
   it('fecha com Esc e com clique fora, mas não com clique dentro', async () => {
     const { onClose } = setup();
-    await userEvent.click(screen.getByRole('heading', { name: 'Estante' }));
+    await userEvent.click(screen.getByRole('heading', { name: 'Estante (2)' }));
     expect(onClose).not.toHaveBeenCalled();
     await userEvent.click(screen.getByTestId('shelf-backdrop'));
     await userEvent.keyboard('{Escape}');
@@ -121,11 +57,11 @@ describe('ShelfPanel', () => {
   });
 
   it('estante vazia mostra aviso', () => {
-    setup({ discs: [], categories: [] });
+    setup({ discs: [] });
     expect(screen.getByText(/Sua estante está vazia/)).toBeInTheDocument();
   });
 
-  describe('arrastar (T39)', () => {
+  describe('arrastar para reordenar', () => {
     it('capas são arrastáveis, com instruções em português para leitor de tela', () => {
       setup();
       const cover = screen.getByRole('button', { name: 'Abrir Kind of Blue' });
@@ -157,6 +93,25 @@ describe('ShelfPanel', () => {
       await userEvent.keyboard('{Escape}');
       expect(onDrop).not.toHaveBeenCalled();
       expect(onClose).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('com filtro por etiqueta', () => {
+    it('mostra o filtro, só os discos filtrados, e o arrastar fica desligado', () => {
+      const props = { onSelect: vi.fn(), onRemove: vi.fn(), onPlay: vi.fn(), onClose: vi.fn(), onDrop: vi.fn() };
+      render(<ShelfPanel discs={[kob]} total={2} filtered filter={<div>chips</div>} {...props} />);
+      expect(screen.getByText('chips')).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'Estante (2)' })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Abrir Nevermind' })).not.toBeInTheDocument();
+      const cover = screen.getByRole('button', { name: 'Abrir Kind of Blue' });
+      expect(cover).not.toHaveAttribute('aria-roledescription');
+      expect(screen.getByText('Para reorganizar arrastando, limpe o filtro.')).toBeInTheDocument();
+    });
+
+    it('nada com essas etiquetas: aviso', () => {
+      const props = { onSelect: vi.fn(), onRemove: vi.fn(), onPlay: vi.fn(), onClose: vi.fn(), onDrop: vi.fn() };
+      render(<ShelfPanel discs={[]} total={2} filtered {...props} />);
+      expect(screen.getByText('Nenhum disco com essas etiquetas.')).toBeInTheDocument();
     });
   });
 });

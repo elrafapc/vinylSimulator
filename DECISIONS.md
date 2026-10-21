@@ -204,7 +204,7 @@
 - Decisão: remover a função inteira: seção "Sugestão" do menu, componente `Suggestion`, `src/suggest/` (incl. a integração com o Last.fm) e seus testes; `VITE_LASTFM_API_KEY` sai do `.env.example` e do README. Substitui a ADR-012; ADR-024 e ADR-026 ficam só como histórico.
 - Consequência: sem chave de terceiros no app; nenhuma chamada fora do Spotify. A T31 (chave no servidor) perde o objeto. Quem tinha `VITE_LASTFM_API_KEY` no `.env.local` pode apagar a linha.
 
-## ADR-028 — Categorias da estante (formato v2 + migração)
+## ADR-028 — Categorias da estante (formato v2 + migração) — SUBSTITUÍDA (ver ADR-032)
 
 - Data: 2026-10-21
 - Contexto: T38 — prateleiras por categoria.
@@ -231,3 +231,17 @@
 - Contexto: T42 — o slider de volume do menu duplicava o knob (ADR-020).
 - Decisão: seção "Volume" sai do menu; `VolumeControl` fica no código, desligado por `SHOW_VOLUME_SLIDER = false` no `App.tsx` (trocar para `true` reativa, usando o mesmo `useVolume` do knob).
 - Consequência: em dispositivo sem volume remoto o aviso do slider não aparece mais; o knob fica desabilitado (`aria-disabled`).
+
+## ADR-032 — Etiquetas (várias por disco) no lugar de categoria única
+
+- Data: 2026-10-21
+- Contexto: T43. Categoria única + prateleira por categoria (ADR-028) era rígida: um disco não podia estar em "Jazz" e "Para trabalhar" ao mesmo tempo.
+- Decisão: `vinil.library` v3 = `{ version: 3, discs: [Disc + tags: string[]] }`; a ordem do array é a ordem da estante e do carrossel. Não há lista de etiquetas guardada: `allTags` deriva dos discos (some quando ninguém usa), em ordem alfabética sem acento. Etiquetas sem duplicadas ignorando maiúsculas/acentos; vale a 1ª grafia na coleção; até 40 caracteres; "Sem etiqueta" reservado (filtro da T44). Migração automática: v2 → v3 com categoria → etiqueta e "Sem categoria" → nenhuma, na ordem da estante expandida da v2 (prateleira por prateleira, "Sem categoria" por último); o JSON v2 fica em `vinil.library.v2-backup`; v1 → v3 sem etiquetas. UI: estante expandida vira coleção única; saem "+ Nova categoria", renomear/excluir prateleira, seletores sobre as capas, `CategorySelect` e os chips de categoria do carrossel; nos detalhes do disco, `TagInput` (Enter adiciona/cria, × ou Backspace com campo vazio remove, autocompletar com `<datalist>` nativo). Etiquetas não aparecem nas capas. Arrastar (ADR-030) passa a um só `SortableContext`: só reordena (`moveDisc` = tirar e pôr na posição do outro), sem mover entre prateleiras.
+- Consequência: substitui a ADR-028. O carrossel fica sem filtro até a T44. O autocompletar do `<datalist>` tem aparência do navegador.
+
+## ADR-033 — Filtro por etiquetas (E entre as selecionadas)
+
+- Data: 2026-10-21
+- Contexto: T44.
+- Decisão: regra em `src/library/favorites.ts`: `filterDiscs` mostra só os discos com TODAS as etiquetas marcadas (ignora maiúsculas/acentos); "Sem etiqueta" seleciona discos sem nenhuma (junto com outra etiqueta, não sobra ninguém); `filterOptions` = etiquetas em uso + "Sem etiqueta" (se houver disco sem); `activeFilter` descarta da seleção etiquetas que sumiram. O filtro fica no `App` (só na sessão) e é o mesmo na estante expandida e no carrossel (componente `TagFilter`), com contador "X de Y discos" e "Limpar filtro". Com filtro ativo o arrastar fica desligado (a ordem é da coleção inteira; reordenar um subconjunto seria ambíguo).
+- Consequência: sem nenhuma etiqueta na estante, o filtro não aparece. "Expandir estante (N)" e o título da estante contam a coleção toda.

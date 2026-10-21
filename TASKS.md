@@ -334,13 +334,13 @@ Legenda: [ ] pendente · [~] em andamento · [x] feita · ∥ pode rodar em para
 
 ## Fase 9 — Etiquetas e ajustes
 
-- [x]  T42 — Volume só pelo knob físico
+- [X]  T42 — Volume só pelo knob físico
   - Depende de: T27
   - Aceite: slider de volume sai do menu; componente VolumeControl mantido no código e desligado por uma constante (SHOW_VOLUME_SLIDER = false) com comentário explicando como reativar; knob continua funcionando; testes do knob passam
-- [ ]  T43 — Etiquetas (várias por disco) no lugar de categoria única
+- [X]  T43 — Etiquetas (várias por disco) no lugar de categoria única
   - Depende de: T39
   - Aceite: botão "+ Nova categoria" e seletores acima das capas removidos; nos detalhes do disco, campo de etiquetas: digitar + Enter adiciona (cria se não existir), autocompletar com etiquetas já usadas, clicar no "x" ou Backspace remove; sem duplicadas (ignora maiúsculas/acentos, mantém a 1ª grafia); lista de etiquetas derivada dos discos (some quando nenhum disco usa); etiquetas não aparecem nas capas; estante vira uma coleção única (sem prateleira por categoria); arrastar da T39 ajustado: só reordena dentro da coleção única (remove mover entre prateleiras), ordem atual preservada na migração; migração: categoria antiga vira etiqueta, "Sem categoria" vira nenhuma; lógica em src/library/ com testes
-- [ ]  T44 — Filtro por etiquetas na estante
+- [x]  T44 — Filtro por etiquetas na estante
   - Depende de: T43
   - Aceite: no topo da estante expandida, chips com todas as etiquetas + "Sem etiqueta"; selecionar 1 ou mais mostra só os discos que têm TODAS as selecionadas; contador "X de Y discos"; botão limpar filtro; carrossel do menu segue o mesmo filtro; com filtro ativo o arrastar fica desabilitado (reordenar só sem filtro)
 - [ ]  T45 — Redesign visual da estante (em branch separada)
