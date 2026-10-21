@@ -225,7 +225,8 @@ function Deck({ user, onLogout }: DeckProps) {
         }
         return prev && { ...prev, isPlaying: nextPlaying };
       });
-      refresh();
+      // Consulta logo para confirmar. Tocar um disco dispensa: o playDisc já conferiu o player no fim (T46).
+      if (!disc) refresh();
     } catch (error) {
       setActionError(errorMessage(error));
     } finally {
@@ -235,7 +236,7 @@ function Deck({ user, onLogout }: DeckProps) {
 
   function togglePlay() {
     if (playing) return run(pause, false);
-    if (selected && selected.uri !== nowPlaying?.contextUri) return run(() => playDisc(selected.uri), true, selected);
+    if (selected && selected.uri !== nowPlaying?.contextUri) return run(() => playDisc(selected.uri, nowPlaying?.deviceId), true, selected);
     return run(resume, true);
   }
 
@@ -249,7 +250,7 @@ function Deck({ user, onLogout }: DeckProps) {
       if (!playing) void run(resume, true);
       return;
     }
-    void run(() => playDisc(disc.uri), true, disc);
+    void run(() => playDisc(disc.uri, nowPlaying?.deviceId), true, disc);
   }
 
   // Trocar de disco exige levantar a agulha primeiro, como numa vitrola de verdade.

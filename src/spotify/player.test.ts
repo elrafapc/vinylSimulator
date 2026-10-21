@@ -89,6 +89,17 @@ describe('player', () => {
     expect(urls().every((u) => !u.includes('device_id=') || u.includes('device_id=d3'))).toBe(true);
   });
 
+  it('T46: com o dispositivo já conhecido (polling), não lista dispositivos', async () => {
+    spotify();
+    await playDisc('spotify:album:a1', 'd9');
+    expect(urls()).toEqual([
+      'PUT /me/player/shuffle?state=false&device_id=d9',
+      'PUT /me/player/play?device_id=d9',
+      'PUT /me/player/shuffle?state=false&device_id=d9',
+      'GET /me/player',
+    ]);
+  });
+
   it('dispositivo ocioso que recusa o primeiro shuffle ainda toca e desliga depois', async () => {
     spotify({ deviceList: devices([{ id: 'd1' }]) });
     const base = fetchMock.getMockImplementation()!;

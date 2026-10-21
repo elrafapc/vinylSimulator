@@ -54,7 +54,18 @@ describe('AlbumSearch', () => {
   it('mostra erro claro', async () => {
     vi.mocked(searchDiscs).mockRejectedValue(new SpotifyError('network'));
     render(<AlbumSearch onSelect={vi.fn()} />);
-    await userEvent.type(screen.getByLabelText('Buscar álbum'), 'x');
+    await userEvent.type(screen.getByLabelText('Buscar álbum'), 'xy');
     expect(await screen.findByText('Falha de rede. Verifique sua conexão.')).toBeInTheDocument();
+  });
+
+  it('T46: só busca a partir de 2 letras', async () => {
+    vi.mocked(searchDiscs).mockClear().mockResolvedValue([]);
+    render(<AlbumSearch onSelect={vi.fn()} />);
+    await userEvent.type(screen.getByLabelText('Buscar álbum'), 'x');
+    await new Promise((r) => setTimeout(r, 500));
+    expect(searchDiscs).not.toHaveBeenCalled();
+    await userEvent.type(screen.getByLabelText('Buscar álbum'), 'y');
+    await vi.waitFor(() => expect(searchDiscs).toHaveBeenCalledWith('xy'));
+    expect(searchDiscs).toHaveBeenCalledTimes(1);
   });
 });

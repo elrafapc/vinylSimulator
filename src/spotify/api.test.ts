@@ -176,3 +176,40 @@ describe('api', () => {
     await expect(spotifyFetch('/me')).rejects.toMatchObject({ kind: 'auth' });
   });
 });
+
+describe('cache (T46)', () => {
+  let fetchMock: ReturnType<typeof vi.fn>;
+  const album = () =>
+    json({ tracks: { items: [{ id: 't1', track_number: 1, name: 'So What', duration_ms: 1, artists: [] }] } });
+
+  beforeEach(() => {
+    fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    localStorage.clear();
+  });
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('faixas de álbum: uma chamada só, guardadas também no localStorage', async () => {
+    fetchMock.mockImplementation(() => Promise.resolve(album()));
+    await getDiscTracks('spotify:album:a1');
+    await getDiscTracks('spotify:album:a1');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(localStorage.getItem('vinil.cache.album:a1')).toContain('So What');
+  });
+
+  it('busca: mesmo termo (ignorando maiúsculas/espaços) não chama de novo', async () => {
+    fetchMock.mockImplementation(() => Promise.resolve(json({ albums: { items: [] }, playlists: { items: [] } })));
+    await searchDiscs('Kind of Blue');
+    await searchDiscs('  kind of blue ');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    await searchDiscs('Blue Train');
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('minhas playlists: uma chamada por página em 10 min', async () => {
+    fetchMock.mockImplementation(() => Promise.resolve(json({ items: [], next: null })));
+    await getMyPlaylists();
+    await getMyPlaylists();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+});

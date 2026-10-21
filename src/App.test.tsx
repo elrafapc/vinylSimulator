@@ -89,7 +89,7 @@ describe('App', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Baixar agulha' }));
 
-    expect(playDisc).toHaveBeenCalledWith(kindOfBlue.uri);
+    expect(playDisc).toHaveBeenCalledWith(kindOfBlue.uri, undefined);
     expect(screen.getByTestId('turntable')).toHaveClass('turntable--playing');
   });
 
@@ -115,15 +115,16 @@ describe('App', () => {
     expect(screen.getByTestId('turntable')).toHaveClass('turntable--stopped');
   });
 
-  it('T08: pausar no app do Spotify para o disco em até 3s', async () => {
+  // T46 trocou o polling fixo de 2s por 5s tocando (limite de requisições): o reflexo leva até ~5s.
+  it('T08/T46: pausar no app do Spotify para o disco no próximo polling (até ~5s)', async () => {
     vi.mocked(getNowPlaying).mockResolvedValueOnce(soWhat(true)).mockResolvedValue(soWhat(false));
     render(<App />);
     await waitFor(() => expect(screen.getByTestId('turntable')).toHaveClass('turntable--playing'));
     expect(screen.getByText('So What')).toBeInTheDocument();
     await waitFor(() => expect(screen.getByTestId('turntable')).toHaveClass('turntable--stopped'), {
-      timeout: 3000,
+      timeout: 6000,
     });
-  });
+  }, 8000);
 
   it('T09: com Spotify fechado, baixar agulha mostra mensagem clara', async () => {
     vi.mocked(playDisc).mockRejectedValue(new SpotifyError('no-device', 404));
@@ -181,7 +182,7 @@ describe('App', () => {
     render(<App />);
     await selectKindOfBlue();
     await userEvent.click(screen.getByRole('button', { name: 'Tocar Kind of Blue' }));
-    expect(playDisc).toHaveBeenCalledWith(kindOfBlue.uri);
+    expect(playDisc).toHaveBeenCalledWith(kindOfBlue.uri, undefined);
     expect(screen.getByTestId('turntable')).toHaveClass('turntable--playing');
   });
 
@@ -246,7 +247,7 @@ describe('App', () => {
     expect(playDisc).not.toHaveBeenCalled();
 
     await userEvent.click(within(details).getByRole('button', { name: '▶ Tocar' }));
-    expect(playDisc).toHaveBeenCalledWith(kindOfBlue.uri);
+    expect(playDisc).toHaveBeenCalledWith(kindOfBlue.uri, undefined);
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(screen.getByTestId('turntable')).toHaveClass('turntable--playing');
   });

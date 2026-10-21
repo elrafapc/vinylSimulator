@@ -14,6 +14,8 @@ export interface NowPlaying {
   progressMs: number;
   durationMs: number;
   deviceName?: string;
+  /** Dispositivo ativo (o playDisc reaproveita e não precisa listar dispositivos). */
+  deviceId?: string;
   volumePercent?: number;
   /** false em dispositivos que não aceitam volume remoto (ex.: iPhone). */
   supportsVolume?: boolean;
@@ -59,8 +61,9 @@ async function shuffleIsOn(): Promise<boolean> {
 
 // Toca um álbum ou playlist da faixa 1, em ordem: o Spotify guarda o aleatório do último uso,
 // então desliga antes e depois do play (o play pode reativar) e confere no fim.
-export async function playDisc(contextUri: string): Promise<void> {
-  const deviceId = await pickDevice();
+export async function playDisc(contextUri: string, knownDeviceId?: string): Promise<void> {
+  // Dispositivo já conhecido pelo polling dispensa listar dispositivos (T46: menos chamadas).
+  const deviceId = knownDeviceId ?? (await pickDevice());
   try {
     await shuffleOff(deviceId);
   } catch (error) {
@@ -103,7 +106,7 @@ export async function prev(): Promise<void> {
 interface PlayerResponse {
   is_playing: boolean;
   progress_ms: number | null;
-  device?: { name: string; volume_percent: number | null; supports_volume?: boolean };
+  device?: { id?: string | null; name: string; volume_percent: number | null; supports_volume?: boolean };
   context?: { uri: string } | null;
   item: {
     id?: string | null;
@@ -132,6 +135,7 @@ export async function getNowPlaying(): Promise<NowPlaying | null> {
     progressMs: data.progress_ms ?? 0,
     durationMs: data.item.duration_ms,
     deviceName: data.device?.name,
+    deviceId: data.device?.id ?? undefined,
     volumePercent: data.device?.volume_percent ?? undefined,
     supportsVolume: data.device?.supports_volume ?? data.device?.volume_percent != null,
   };

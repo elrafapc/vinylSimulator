@@ -252,3 +252,14 @@
 - Contexto: T45 — dar à estante expandida cara de móvel (inspiração: estante de madeira escura com cornija, tábuas verticais, prateleiras grossas e divisória central). Feita na branch atual (sem `design-estante`), a pedido.
 - Decisão: só gradientes CSS, sem imagens. Variáveis `--bookcase-*` no `theme.css` (nogueira escura no dark; um tom mais clara no light). O `Shelf` grande vira `Bookcase`: mede a largura (na montagem + `ResizeObserver`) e distribui os discos, na ordem da estante, em prateleiras × vãos (2 vãos; 1 abaixo de 768px), com mínimo de 2 prateleiras; as medidas (capa, vão, divisória) ficam no TS e vão para o CSS como variáveis. Itens viram `div role="listitem"` dentro de `role="list"` (os vãos quebram a lista), mantendo nomes acessíveis; o arrastar (dnd-kit) segue funcionando porque usa as posições na tela.
 - Consequência: a lista pequena (`Shelf` sem `large`) segue igual. Se a largura não puder ser medida (ex.: jsdom), usa 1000px como padrão.
+
+## ADR-035 — Cliente único com limite de requisições, polling adaptativo e cache
+
+- Data: 2026-10-21
+- Contexto: T46 — erro 429 ("muitas requisições"). Auditoria: polling fixo de 2s (30/min sempre, inclusive com a aba oculta e depois de um 429), detalhes de disco e busca sem cache, ~45–50 chamadas/min em uso normal; no 429 o polling seguia batendo e o limite nunca esvaziava.
+- Decisão:
+  - `src/spotify/client.ts` (`spotifyFetch`, reexportado por `api.ts`): ao receber 429, pausa **todas** as chamadas pelo `Retry-After` (padrão 5s), sem repetir na hora; GETs iguais em andamento são deduplicados (cada um recebe uma cópia da resposta); contador de chamadas/min no console em dev; erros logam método, URL, status e corpo.
+  - `src/spotify/cache.ts`: faixas de álbum em memória + `localStorage` (`vinil.cache.album:<id>`), sem expirar; playlists (faixas, dados, minhas playlists) e busca por termo em memória, 10 min. Carregamentos simultâneos da mesma chave são compartilhados; erro não fica no cache.
+  - Polling único: `NowPlayingProvider` (contexto) é o único que consulta `/me/player` — 5s tocando, 20s pausado, parado com a aba oculta (consulta ao voltar), 500ms após uma ação do usuário (tempo do Spotify refletir); próximo ciclo só depois do anterior terminar. A barra de progresso anda localmente entre consultas.
+  - Busca: espera 400ms, mínimo 2 caracteres. Knob: envia ao soltar o arrasto ou após 300ms parado (rolagem/setas). `playDisc` reaproveita o dispositivo já conhecido pelo polling (sem listar dispositivos) e dispensa a consulta extra depois de tocar.
+- Consequência: minuto simulado de uso normal (tocar, pausar, abrir estante e detalhes, buscar) = 18 chamadas (teste `usage.test.ts`); tocando parado ~12/min; pausado ~3/min; aba oculta 0. Pause/troca feita no app do Spotify aparece em até ~5s (antes 2s) — o teste da T08 foi ajustado. Regra registrada no CLAUDE.md: nada de polling próprio em componente; sempre pelo cliente único.

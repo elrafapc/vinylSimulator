@@ -110,4 +110,25 @@ describe('botão e slider juntos', () => {
     expect(setVolume).toHaveBeenCalledOnce();
     expect(setVolume).toHaveBeenCalledWith(70);
   });
+
+  it('T46: arrastar só envia ao soltar (sem esperar os 300ms)', async () => {
+    vi.mocked(setVolume).mockClear();
+    function Wired() {
+      const volume = useVolume(40);
+      return <VolumeKnob value={volume.value} onChange={volume.change} onCommit={volume.commit} />;
+    }
+    render(<Wired />);
+    const pointer = (type: string, clientX: number, clientY: number) =>
+      fireEvent(knob(), new MouseEvent(type, { bubbles: true, clientX, clientY }));
+    pointer('pointerdown', 10, 0);
+    pointer('pointermove', 0, -10);
+    expect(setVolume).not.toHaveBeenCalled();
+    pointer('pointerup', 0, -10);
+    await act(() => vi.advanceTimersByTimeAsync(0));
+    expect(setVolume).toHaveBeenCalledOnce();
+    expect(setVolume).toHaveBeenCalledWith(50);
+    // Nada pendente: o debounce não manda de novo.
+    await act(() => vi.advanceTimersByTimeAsync(400));
+    expect(setVolume).toHaveBeenCalledOnce();
+  });
 });

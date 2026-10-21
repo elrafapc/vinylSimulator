@@ -350,7 +350,7 @@ Legenda: [ ] pendente · [~] em andamento · [x] feita · ∥ pode rodar em para
 
   - Depende de: T44
   - Aceite: feito na branch design-estante; estante de madeira escura em CSS: moldura com cornija no topo e rodapé na base, fundo de tábuas verticais, prateleiras grossas com borda frontal e sombra, divisória central em 2 vãos (1 vão abaixo de 768px); capas em pé sobre as prateleiras com sombra de contato; quantidade de prateleiras se ajusta ao número de discos; filtros e detalhes do disco intactos; light e dark ok; sem imagens externas pesadas
-- [ ]  T46 — Reduzir chamadas ao Spotify (erro 429 "muitas requisições")
+- [x]  T46 — Reduzir chamadas ao Spotify (erro 429 "muitas requisições")
 
   - Depende de: —
   - Aceite: toda chamada passa por um único cliente em src/spotify/ com: fila global que pausa tudo pelo tempo do header Retry-After ao receber 429 (sem retry imediato), deduplicação de GETs iguais em andamento e contador de chamadas/min visível no console em dev; um único polling no app inteiro (contexto compartilhado, nenhum componente faz polling próprio); polling adaptativo: 5s tocando, 20s pausado, parado com aba oculta, imediato após ação do usuário; barra de progresso avança localmente entre polls; cache de detalhes de álbum (memória + localStorage, sem expirar) e de playlists (10 min); busca com debounce 400ms, mínimo 2 caracteres e cache por termo; knob envia volume só ao soltar ou após 300ms parado; uso normal (tocar, pausar, abrir estante e detalhes) fica abaixo de 20 chamadas/min; testes do cliente cobrindo 429 + Retry-After e deduplicação
