@@ -1,8 +1,8 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
-import { getMe, searchDiscs } from './spotify/api';
+import { getMe, getPlaylistDisc, searchDiscs } from './spotify/api';
 import { isLoggedIn } from './spotify/auth';
 import { SpotifyError } from './spotify/errors';
 import { getNowPlaying, pause, playDisc, resume, type NowPlaying } from './spotify/player';
@@ -16,7 +16,14 @@ vi.mock('./spotify/auth', () => ({
 }));
 vi.mock('./spotify/api', async (importOriginal) => {
   const actual = await importOriginal<typeof import('./spotify/api')>();
-  return { getMe: vi.fn(), searchDiscs: vi.fn(), getMyPlaylists: vi.fn(), getDiscTracks: vi.fn(), parseDiscUri: actual.parseDiscUri };
+  return {
+    getMe: vi.fn(),
+    searchDiscs: vi.fn(),
+    getMyPlaylists: vi.fn(),
+    getDiscTracks: vi.fn(),
+    getPlaylistDisc: vi.fn(),
+    parseDiscUri: actual.parseDiscUri,
+  };
 });
 vi.mock('./spotify/player', () => ({
   getNowPlaying: vi.fn(),
@@ -154,7 +161,7 @@ describe('App', () => {
   it('T19: estante abre em painel; escolher disco coloca no toca-discos e fecha', async () => {
     localStorage.setItem('vinil.favorites', JSON.stringify([kindOfBlue]));
     render(<App />);
-    await userEvent.click(await screen.findByRole('button', { name: 'Abrir estante (1)' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Expandir estante (1)' }));
     await userEvent.click(within(screen.getByRole('dialog', { name: 'Estante' })).getByRole('button', { name: 'Colocar Kind of Blue no toca-discos' }));
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(screen.getByRole('img', { name: 'Capa de Kind of Blue' })).toBeInTheDocument();
@@ -169,11 +176,116 @@ describe('App', () => {
     expect(screen.getByTestId('turntable')).toHaveClass('turntable--playing');
   });
 
-  it('detalhes do disco (capa e faixas) ficam no menu lateral', async () => {
-    vi.mocked(getNowPlaying).mockResolvedValue(soWhat(true));
+  it('T32: música atual no topo do menu, com "Tocando em", e seções na ordem', async () => {
+    vi.mocked(getNowPlaying).mockResolvedValue({ ...soWhat(true), deviceName: 'MacBook' });
     render(<App />);
     const menu = await screen.findByRole('complementary', { name: 'Menu' });
-    expect(await within(menu).findByRole('button', { name: 'Ver detalhes de Kind of Blue' })).toBeInTheDocument();
-    expect(screen.getByText('So What').closest('aside')).toBeNull();
+    expect(await within(menu).findByText('So What')).toBeInTheDocument();
+    expect(within(menu).getByText('Tocando em: MacBook')).toBeInTheDocument();
+    expect(within(menu).getByRole('button', { name: 'Ver detalhes de Kind of Blue' })).toBeInTheDocument();
+    expect(within(menu).getAllByRole('heading', { level: 2 }).map((h) => h.textContent?.replace(/[▸▾]/g, '').trim())).toEqual([
+      'Música atual',
+      'Player',
+      'Volume',
+      'Disco',
+      'Estante',
+      'Buscar discos',
+      'Importar do Spotify',
+      'Sugestão',
+      'Sons',
+    ]);
+  });
+
+  it('T32: Sons começa recolhido e abre ao clicar, sem desmontar os controles', async () => {
+    render(<App />);
+    const toggle = await screen.findByRole('button', { name: /Sons/ });
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    // Escondido, mas na página (o som continua tocando).
+    expect(screen.getByRole('button', { name: 'Chiado ligado', hidden: true })).not.toBeVisible();
+    await userEvent.click(toggle);
+    expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByRole('button', { name: 'Chiado ligado' })).toBeVisible();
+  });
+
+  it('T33: ★ ao lado do player guarda e tira da estante o álbum que está tocando', async () => {
+    vi.mocked(getNowPlaying).mockResolvedValue(soWhat(true));
+    render(<App />);
+    await userEvent.click(await screen.findByRole('button', { name: 'Guardar Kind of Blue na estante' }));
+    expect(screen.getByRole('button', { name: 'Tirar Kind of Blue da estante' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'Expandir estante (1)' })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Tirar Kind of Blue da estante' }));
+    expect(screen.getByText(/Sua estante está vazia/)).toBeInTheDocument();
+  });
+
+  it('T33: playlist tocada direto pelo Spotify é guardada com nome e dono', async () => {
+    vi.mocked(getNowPlaying).mockResolvedValue({ ...soWhat(true), contextUri: 'spotify:playlist:p9' });
+    vi.mocked(getPlaylistDisc).mockResolvedValue({ id: 'p9', uri: 'spotify:playlist:p9', kind: 'playlist', name: 'Jazz da Ana', artist: 'Ana' });
+    render(<App />);
+    await userEvent.click(await screen.findByRole('button', { name: 'Guardar Playlist na estante' }));
+    expect(getPlaylistDisc).toHaveBeenCalledWith('p9');
+    expect(await screen.findByRole('button', { name: 'Expandir estante (1)' })).toBeInTheDocument();
+    expect(JSON.parse(localStorage.getItem('vinil.favorites') ?? '[]')[0]).toMatchObject({ name: 'Jazz da Ana' });
+  });
+
+  it('T34: carrossel no menu coloca o disco na vitrola', async () => {
+    localStorage.setItem('vinil.favorites', JSON.stringify([kindOfBlue]));
+    render(<App />);
+    const carousel = await screen.findByRole('list', { name: 'Estante (carrossel)' });
+    await userEvent.click(within(carousel).getByRole('button', { name: 'Colocar Kind of Blue no toca-discos' }));
+    expect(screen.getByRole('img', { name: 'Capa de Kind of Blue' })).toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  describe('T36: celular', () => {
+    beforeEach(() => {
+      // Só a media query do celular bate (movimento reduzido etc. continuam falsos).
+      vi.stubGlobal('matchMedia', (query: string) => ({
+        matches: query.includes('max-width: 767px'),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      }));
+    });
+    afterEach(() => vi.unstubAllGlobals());
+
+    it('menu começa fechado (inerte) e a barrinha mostra a faixa com play/pausa', async () => {
+      vi.mocked(getNowPlaying).mockResolvedValue(soWhat(true));
+      vi.mocked(pause).mockResolvedValue();
+      render(<App />);
+      const menu = await screen.findByRole('complementary', { name: 'Menu', hidden: true });
+      expect(menu).toHaveAttribute('inert');
+      expect(menu).not.toHaveClass('deck__menu--open');
+      const bar = (await screen.findByText('So What', { selector: '.mini-player strong' })).closest('.mini-player') as HTMLElement;
+      await userEvent.click(within(bar).getByRole('button', { name: 'Pausar' }));
+      expect(pause).toHaveBeenCalled();
+    });
+
+    it('abre pelo botão Menu ou pela barrinha; fecha por Fechar, fundo e Esc', async () => {
+      render(<App />);
+      const menu = await screen.findByRole('complementary', { name: 'Menu', hidden: true });
+
+      await userEvent.click(screen.getByRole('button', { name: '☰ Menu' }));
+      expect(menu).toHaveClass('deck__menu--open');
+      expect(menu).not.toHaveAttribute('inert');
+      expect(screen.queryByRole('button', { name: 'Abrir menu' })).not.toBeInTheDocument();
+      await userEvent.click(within(menu).getByRole('button', { name: 'Fechar' }));
+      expect(menu).not.toHaveClass('deck__menu--open');
+
+      await userEvent.click(screen.getByRole('button', { name: 'Abrir menu' }));
+      expect(menu).toHaveClass('deck__menu--open');
+      await userEvent.click(screen.getByTestId('sheet-backdrop'));
+      expect(menu).not.toHaveClass('deck__menu--open');
+
+      await userEvent.click(screen.getByRole('button', { name: 'Abrir menu' }));
+      await userEvent.keyboard('{Escape}');
+      expect(menu).not.toHaveClass('deck__menu--open');
+    });
+
+    it('não usa nem altera o "recolher menu" salvo do desktop', async () => {
+      localStorage.setItem('vinil.sidebar', 'collapsed');
+      render(<App />);
+      await userEvent.click(await screen.findByRole('button', { name: '☰ Menu' }));
+      expect(screen.getByRole('main')).not.toHaveClass('deck--collapsed');
+      expect(localStorage.getItem('vinil.sidebar')).toBe('collapsed');
+    });
   });
 });

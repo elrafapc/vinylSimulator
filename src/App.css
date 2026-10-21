@@ -145,14 +145,21 @@ button {
   align-items: center;
   gap: 20px;
   min-width: 0;
-  padding: 24px 32px 32px;
+  padding: 0 32px 24px;
 }
 
+/* Cabeçalho fixo: logo + recolher menu continuam visíveis ao rolar. */
 .deck__header {
+  position: sticky;
+  top: 0;
+  z-index: 5;
   display: flex;
   align-self: stretch;
   align-items: center;
   justify-content: space-between;
+  padding-block: 20px 12px;
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  backdrop-filter: blur(8px);
 }
 
 .deck__menu-toggle {
@@ -167,15 +174,6 @@ button {
 
 .deck__menu-toggle:hover {
   background: var(--hover);
-}
-
-.deck__info {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
-  width: 100%;
-  max-width: 760px;
 }
 
 /* Rodapé no fim do palco, à direita: nunca cobre a vitrola nem o menu;
@@ -231,6 +229,52 @@ button {
   letter-spacing: 0.15em;
   text-transform: uppercase;
   color: var(--muted);
+}
+
+.deck__section-toggle {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.deck__section-toggle:hover {
+  color: var(--text);
+}
+
+.player-row {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  justify-content: center;
+}
+
+.shelf-toggle {
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: none;
+  color: var(--accent);
+  font-size: 1.15rem;
+  cursor: pointer;
+}
+
+.shelf-toggle:hover {
+  background: var(--hover);
+}
+
+.shelf-toggle:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 .deck__menu .controls {
@@ -463,9 +507,8 @@ button {
 }
 
 .now-playing {
-  width: min(100%, 560px);
+  width: 100%;
   margin: 0;
-  text-align: center;
 }
 
 .now-playing p {
@@ -489,6 +532,12 @@ button {
 .now-playing__album {
   color: var(--muted);
   font-size: 0.85rem;
+}
+
+.now-playing .now-playing__device {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 0.8rem;
 }
 
 .now-playing__bar {
@@ -706,4 +755,215 @@ button {
   font-style: normal;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+}
+
+/* ---------- Celular (T36): abaixo de 768px ---------- */
+
+/* Painel do menu e barrinha: só existem no celular (o JSX só os monta lá). */
+.sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 15;
+  background: var(--backdrop);
+}
+
+.sheet__top {
+  position: sticky;
+  top: -8px;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin: -8px -16px 0;
+  padding: 8px 16px 4px;
+  background: var(--panel);
+}
+
+.sheet__handle {
+  position: absolute;
+  left: 50%;
+  top: 10px;
+  width: 40px;
+  height: 4px;
+  transform: translateX(-50%);
+  border-radius: 2px;
+  background: var(--border);
+}
+
+.sheet__close {
+  min-height: 44px;
+  padding: 0 12px;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.mini-player {
+  position: fixed;
+  left: 8px;
+  right: 8px;
+  bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+  z-index: 10;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--panel);
+  box-shadow: 0 10px 30px var(--shadow);
+}
+
+.mini-player__info {
+  display: flex;
+  flex: 1;
+  gap: 10px;
+  align-items: center;
+  min-width: 0;
+  min-height: 48px;
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.mini-player__info img,
+.mini-player__nocover {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 4px;
+  background: var(--placeholder);
+  object-fit: cover;
+}
+
+.mini-player__text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.mini-player__text strong,
+.mini-player__text span {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.mini-player__text span {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.mini-player__play {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.mini-player__play:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+@media (max-width: 767px) {
+  .deck,
+  .deck--collapsed {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* Espaço embaixo para a barrinha fixa não cobrir o rodapé. */
+  .deck__stage {
+    padding: 0 12px calc(84px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .deck__header {
+    padding-block: calc(12px + env(safe-area-inset-top, 0px)) 8px;
+  }
+
+  .brand--small .logo {
+    height: 30px;
+  }
+
+  .credit {
+    align-self: center;
+  }
+
+  /* Menu vira painel que sobe de baixo. */
+  .deck__menu--sheet {
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: auto;
+    bottom: 0;
+    z-index: 20;
+    height: auto;
+    max-height: 85vh;
+    max-height: 85dvh;
+    padding: 8px 16px calc(24px + env(safe-area-inset-bottom, 0px));
+    border-left: 0;
+    border-top: 1px solid var(--border);
+    border-radius: 18px 18px 0 0;
+    box-shadow: 0 -10px 40px var(--shadow);
+    transform: translateY(105%);
+    transition: transform 0.3s ease;
+  }
+
+  .deck__menu--open {
+    transform: translateY(0);
+  }
+
+}
+
+@media (max-width: 767px) and (prefers-reduced-motion: reduce) {
+  .deck__menu--sheet {
+    transition: none;
+  }
+}
+
+/* Áreas de toque ≥ 44px: no layout de celular e em qualquer tela de toque (ex.: tablet). */
+@media (max-width: 767px), (pointer: coarse) {
+  .theme-toggle,
+  .shelf-toggle,
+  .carousel__arrow,
+  .play-overlay,
+  .album-search__fav {
+    width: 44px;
+    height: 44px;
+  }
+
+  .link {
+    min-width: 48px;
+    min-height: 48px;
+    padding: 0 10px;
+  }
+
+  .deck__menu-toggle,
+  .deck__section-toggle,
+  .crackle__toggle,
+  .album-search__input {
+    min-height: 44px;
+  }
+
+  input[type='range'] {
+    height: 44px;
+  }
+
+  .album-search__item {
+    min-height: 56px;
+  }
+
+  /* Link do rodapé: área de toque maior sem mudar o texto. */
+  .credit a {
+    display: inline-block;
+    padding: 15px 0;
+  }
 }

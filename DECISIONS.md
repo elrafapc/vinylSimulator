@@ -166,3 +166,26 @@
 - Contexto: T28; até aqui o app só rodava em 127.0.0.1 (ADR-002).
 - Decisão: Redirect URI = `window.location.origin + "/callback"`; `vercel.json` reescreve rotas para `index.html`; variáveis documentadas no README.
 - Consequência: cada origem (local e produção) precisa estar cadastrada no Spotify; abrir por `localhost` quebra o login (Spotify não aceita). Variáveis `VITE_*` ficam visíveis no bundle. Antes de publicar: rever direitos da foto da vitrola (ADR-018) e lembrar que em Development Mode só contas da allowlist entram.
+
+## ADR-023 — Guardar o disco atual e importar com busca
+
+- Data: 2026-10-21
+- Contexto: T33 (★ ao lado do player) e T35 (busca no importador).
+- Decisão: `src/library/currentDisc.ts` define o disco atual pelo contexto do player (álbum/playlist) ou, sem ele, pelo álbum da faixa; nada tocando = disco selecionado. Playlist tocada direto pelo Spotify chega só com o id: antes de guardar, busca nome/dono/capa em `GET /playlists/{id}` (se falhar, guarda como "Playlist"). `getMyPlaylists` passou a ler todas as páginas (50 por vez, até 40 páginas) uma vez ao abrir o importador; o filtro é local, sem acento e sem diferenciar maiúsculas.
+- Consequência: abrir o importador faz uma chamada por página de playlists; playlists de terceiros podem ficar com nome genérico se o Spotify recusar o `GET /playlists/{id}` em Development Mode.
+
+## ADR-024 — Chave do Last.fm só no servidor (proxy /api/lastfm)
+
+- Data: 2026-10-21
+- Contexto: T31. Com `VITE_LASTFM_API_KEY`, a chave ia para o bundle e ficava visível para qualquer visitante do app publicado (ADR-022).
+- Decisão: o navegador chama `/api/lastfm?method=…&artist=…&limit=…`; o servidor acrescenta `LASTFM_API_KEY` (sem prefixo `VITE_`) e repassa ao Last.fm. Lógica única em `api/_proxy.ts` (sem dependências), usada pela Vercel Function `api/lastfm.ts` (assinatura Web `GET(request) → Response`) e por um middleware no `vite.config.ts` para `npm run dev`/`preview`. Só `artist.getSimilar` e `artist.getTopAlbums` passam; `limit` limitado a 50; parâmetros extras do navegador (inclusive `api_key`) são ignorados; respostas boas com `s-maxage=86400` (cache da CDN); logs sem a chave. Servidor sem chave responde 500 `missing-key` e a UI mostra "configure LASTFM_API_KEY".
+- Alternativas: manter a chave no cliente (só leitura, baixo risco) — mas qualquer um poderia usá-la e gastar a cota; backend separado — desnecessário para dois métodos.
+- Consequência: primeira peça de servidor do projeto (ADR-002 previa backend só para contas). Não há rate limit próprio além do cache da CDN. A Vercel Function não foi testada em produção ainda; o `.env.local` precisa trocar `VITE_LASTFM_API_KEY` por `LASTFM_API_KEY`. `tsconfig` passou a incluir `api/`.
+
+## ADR-025 — Layout de celular: vitrola no topo, menu em painel de baixo e barrinha
+
+- Data: 2026-10-21
+- Contexto: T36 (abaixo de 768px).
+- Decisão: `useMediaQuery('(max-width: 767px)')` troca o layout. No celular a vitrola ocupa a largura toda; o menu vira painel fixo que sobe de baixo (CSS, até 85% da altura), com alça, "Fechar", fundo escurecido e Esc; começa sempre fechado, com estado próprio (não usa nem altera o "recolher menu" salvo do desktop). Fechado, fica montado e `inert` (os sons seguem tocando). Com o painel fechado, uma barrinha fixa mostra a faixa atual e ▶/❚❚; tocar no texto abre o painel. Áreas de toque ≥ 44px valem no celular e em qualquer tela `pointer: coarse` (tablets); o knob ganha área invisível de ~45px. Meta tags de app para iOS, `viewport-fit=cover` e margens de área segura; manifest com `id`.
+- Alternativas: só ajustar o grid (menu empilhado embaixo da vitrola) — rolagem longa e controles longe da vitrola.
+- Consequência: em 768px vale o layout de desktop. Verificado em 375px e 768px no Chrome headless com respostas do Spotify simuladas (sem rolagem horizontal; 0 alvos < 44px em 375px). Sem gesto de arrastar para fechar o painel. Instalar no celular exige HTTPS (deploy) — não testado em aparelho.

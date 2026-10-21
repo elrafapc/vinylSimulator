@@ -3,7 +3,8 @@
 .turntable {
   position: relative;
   width: 100%;
-  max-width: calc((100vh - 120px) * 1250 / 1000);
+  /* Cabe na altura da tela junto com o cabeçalho e o rodapé (a música atual foi para o menu). */
+  max-width: calc((100vh - 150px) * 1250 / 1000);
   aspect-ratio: 1250 / 1000;
   flex-shrink: 0;
   filter: var(--turntable-filter);
@@ -218,7 +219,8 @@
 .knob__mark {
   position: absolute;
   color: #ebe4d8;
-  font-size: 1.15cqw;
+  /* Escala com a vitrola, mas não fica ilegível em tela pequena. */
+  font-size: max(1.15cqw, 8px);
   letter-spacing: 0.04em;
   opacity: 0.85;
   white-space: nowrap;
@@ -239,5 +241,22 @@
 @media (prefers-reduced-motion: reduce) {
   .knob__cap {
     transition: none;
+  }
+}
+
+@media (max-width: 767px) {
+  /* Celular: a vitrola ocupa a largura toda (sem o limite pela altura da tela). */
+  .turntable {
+    max-width: none;
+  }
+}
+
+@media (max-width: 767px), (pointer: coarse) {
+  /* O botão de volume fica com ~21px no celular: área de toque invisível de ~45px em volta. */
+  .knob::before {
+    content: '';
+    position: absolute;
+    inset: -12px;
+    border-radius: 50%;
   }
 }

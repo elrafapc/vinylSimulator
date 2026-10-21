@@ -13,13 +13,11 @@ export function NowPlaying({ nowPlaying }: NowPlayingProps) {
     <div className="now-playing" aria-live="polite">
       <p className="now-playing__track">{nowPlaying.trackName}</p>
       <p className="now-playing__artist">{nowPlaying.artist}</p>
-      <p className="now-playing__album">
-        {nowPlaying.albumName}
-        {nowPlaying.deviceName && <span> · {nowPlaying.deviceName}</span>}
-      </p>
+      <p className="now-playing__album">{nowPlaying.albumName}</p>
       <div className="now-playing__bar">
         <span style={{ width: `${progress}%` }} />
       </div>
+      {nowPlaying.deviceName && <p className="now-playing__device">Tocando em: {nowPlaying.deviceName}</p>}
     </div>
   );
 }

@@ -6,17 +6,22 @@ import { DiscDetails } from './components/DiscDetails';
 import { Footer } from './components/Footer';
 import { FullscreenToggle } from './components/FullscreenToggle';
 import { Logo } from './components/Logo';
+import { MiniPlayer } from './components/MiniPlayer';
 import { ThemeToggle } from './components/ThemeToggle';
 import { NowPlaying } from './components/NowPlaying';
 import { PlaylistImporter } from './components/Shelf';
+import { ShelfCarousel } from './components/ShelfCarousel';
 import { ShelfPanel } from './components/ShelfPanel';
+import { ShelfToggle } from './components/ShelfToggle';
 import { Suggestion } from './components/Suggestion';
 import { Turntable } from './components/Turntable';
 import { VolumeControl } from './components/VolumeControl';
 import { useFavorites } from './hooks/useFavorites';
+import { MOBILE_QUERY, useMediaQuery } from './hooks/useMediaQuery';
 import { useNowPlaying } from './hooks/useNowPlaying';
 import { useSidebar } from './hooks/useSidebar';
 import { useVolume } from './hooks/useVolume';
+import { completeDisc, currentDisc } from './library/currentDisc';
 import { getMe, type Disc, type User } from './spotify/api';
 import { CLIENT_ID, handleCallback, isLoggedIn, login, logout } from './spotify/auth';
 import { errorMessage, SpotifyError } from './spotify/errors';
@@ -110,8 +115,23 @@ function Deck({ user, onLogout }: DeckProps) {
   const [actionError, setActionError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const { collapsed, toggle: toggleSidebar } = useSidebar();
+  // Celular: o menu vira painel que sobe de baixo; começa sempre fechado e não mexe no "recolher" do desktop.
+  const mobile = useMediaQuery(MOBILE_QUERY);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const menuOpen = mobile ? sheetOpen : !collapsed;
   const [shelfOpen, setShelfOpen] = useState(false);
+  // Sons começa sempre recolhido (não guarda a escolha).
+  const [soundsOpen, setSoundsOpen] = useState(false);
   const closeShelf = useCallback(() => setShelfOpen(false), []);
+
+  useEffect(() => {
+    if (!mobile || !sheetOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setSheetOpen(false);
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [mobile, sheetOpen]);
   // Slider do menu e botão da vitrola compartilham o mesmo volume.
   const volume = useVolume(nowPlaying?.volumePercent);
 
@@ -122,6 +142,20 @@ function Deck({ user, onLogout }: DeckProps) {
     ? { url: nowPlaying.imageUrl, name: nowPlaying.albumName, uri: nowPlaying.contextUri ?? nowPlaying.albumUri }
     : { url: selected?.imageUrl, name: selected?.name, uri: selected?.uri };
   const playingId = playing && selected && nowPlaying?.contextUri === selected.uri ? selected.id : undefined;
+  // Disco que o botão ★ guarda/tira: o que está tocando (mesmo se escolhido no app do Spotify).
+  const discNow = currentDisc(nowPlaying, selected);
+  const [savingDisc, setSavingDisc] = useState(false);
+
+  async function toggleCurrentOnShelf() {
+    if (!discNow) return;
+    if (favoriteIds.has(discNow.id)) return removeFavorite(discNow.id);
+    setSavingDisc(true);
+    try {
+      addMany([await completeDisc(discNow)]);
+    } finally {
+      setSavingDisc(false);
+    }
+  }
 
   async function run(action: () => Promise<void>, nextPlaying: boolean, disc?: Disc) {
     setBusy(true);
@@ -176,20 +210,20 @@ function Deck({ user, onLogout }: DeckProps) {
   const message = actionError ?? pollError;
 
   return (
-    <main className={`deck${collapsed ? ' deck--collapsed' : ''}`}>
+    <main className={`deck${mobile ? ' deck--mobile' : collapsed ? ' deck--collapsed' : ''}`}>
       <section className="deck__stage">
         <header className="deck__header">
           <h1 className="brand brand--small">
-            <Logo variant={collapsed ? 'mark' : 'full'} />
+            <Logo variant={!mobile && collapsed ? 'mark' : 'full'} />
           </h1>
           <button
             type="button"
             className="deck__menu-toggle"
-            aria-expanded={!collapsed}
+            aria-expanded={menuOpen}
             aria-controls="deck-menu"
-            onClick={toggleSidebar}
+            onClick={mobile ? () => setSheetOpen((open) => !open) : toggleSidebar}
           >
-            {collapsed ? '☰ Menu' : 'Recolher menu ›'}
+            {mobile || collapsed ? '☰ Menu' : 'Recolher menu ›'}
           </button>
         </header>
 
@@ -209,14 +243,28 @@ function Deck({ user, onLogout }: DeckProps) {
           volumeDisabled={!nowPlaying?.supportsVolume}
           onVolumeChange={volume.change}
         />
-        <div className="deck__info">
-          <NowPlaying nowPlaying={nowPlaying} />
-        </div>
         {!canPlay && <p className="hint">Escolha um disco na estante e baixe a agulha.</p>}
         <Footer />
       </section>
 
-      <aside id="deck-menu" className="deck__menu" aria-label="Menu" hidden={collapsed}>
+      {mobile && sheetOpen && <div className="sheet-backdrop" data-testid="sheet-backdrop" onClick={() => setSheetOpen(false)} />}
+
+      <aside
+        id="deck-menu"
+        className={`deck__menu${mobile ? ` deck__menu--sheet${sheetOpen ? ' deck__menu--open' : ''}` : ''}`}
+        aria-label="Menu"
+        hidden={!mobile && collapsed}
+        // Fechado no celular: continua montado (os sons seguem tocando), mas fora do Tab e do leitor de tela.
+        inert={mobile && !sheetOpen}
+      >
+        {mobile && (
+          <div className="sheet__top">
+            <span className="sheet__handle" aria-hidden />
+            <button type="button" className="sheet__close" onClick={() => setSheetOpen(false)}>
+              Fechar
+            </button>
+          </div>
+        )}
         <div className="deck__user">
           <span>{user.displayName}</span>
           <button type="button" className="link" onClick={onLogout}>
@@ -226,14 +274,27 @@ function Deck({ user, onLogout }: DeckProps) {
           <ThemeToggle />
         </div>
 
-        <h2>Controles</h2>
-        <Controls
-          playing={playing}
-          disabled={busy || !canPlay}
-          onPlayPause={() => void togglePlay()}
-          onPrev={() => void run(prev, playing)}
-          onNext={() => void run(next, playing)}
-        />
+        <h2>Música atual</h2>
+        <NowPlaying nowPlaying={nowPlaying} />
+
+        <h2>Player</h2>
+        <div className="player-row">
+          <Controls
+            playing={playing}
+            disabled={busy || !canPlay}
+            onPlayPause={() => void togglePlay()}
+            onPrev={() => void run(prev, playing)}
+            onNext={() => void run(next, playing)}
+          />
+          <ShelfToggle
+            disc={discNow}
+            onShelf={discNow ? favoriteIds.has(discNow.id) : false}
+            busy={savingDisc}
+            onToggle={() => void toggleCurrentOnShelf()}
+          />
+        </div>
+
+        <h2>Volume</h2>
         <VolumeControl supported={nowPlaying?.supportsVolume} control={volume} />
 
         {cover.uri && (
@@ -247,17 +308,13 @@ function Deck({ user, onLogout }: DeckProps) {
           </>
         )}
 
-        <h2>Sons</h2>
-        <AmbientSounds playing={playing} />
-
         <h2>Estante</h2>
-        <button type="button" className="importer__open" onClick={() => setShelfOpen(true)}>
-          Abrir estante ({favorites.length})
-        </button>
-        <PlaylistImporter existingIds={favoriteIds} onImport={addMany} />
-
-        <h2>Sugestão</h2>
-        <Suggestion shelf={favorites} favoriteIds={favoriteIds} onPlay={playNow} onAdd={(disc) => addMany([disc])} />
+        <ShelfCarousel
+          discs={favorites}
+          selectedId={selected?.id}
+          onSelect={handleSelect}
+          onExpand={() => setShelfOpen(true)}
+        />
 
         <h2>Buscar discos</h2>
         <AlbumSearch
@@ -268,7 +325,39 @@ function Deck({ user, onLogout }: DeckProps) {
           onToggleFavorite={toggleFavorite}
           onPlay={() => void togglePlay()}
         />
+
+        <h2>Importar do Spotify</h2>
+        <PlaylistImporter existingIds={favoriteIds} onImport={addMany} />
+
+        <h2>Sugestão</h2>
+        <Suggestion shelf={favorites} favoriteIds={favoriteIds} onPlay={playNow} onAdd={(disc) => addMany([disc])} />
+
+        <h2>
+          <button
+            type="button"
+            className="deck__section-toggle"
+            aria-expanded={soundsOpen}
+            aria-controls="deck-sounds"
+            onClick={() => setSoundsOpen((open) => !open)}
+          >
+            Sons <span aria-hidden>{soundsOpen ? '▾' : '▸'}</span>
+          </button>
+        </h2>
+        {/* Recolhido só esconde: os sons continuam montados e tocando. */}
+        <div id="deck-sounds" hidden={!soundsOpen}>
+          <AmbientSounds playing={playing} />
+        </div>
       </aside>
+
+      {mobile && !sheetOpen && (
+        <MiniPlayer
+          nowPlaying={nowPlaying}
+          playing={playing}
+          disabled={busy || !canPlay}
+          onPlayPause={() => void togglePlay()}
+          onOpen={() => setSheetOpen(true)}
+        />
+      )}
 
       {shelfOpen && (
         <ShelfPanel

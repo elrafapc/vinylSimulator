@@ -17,20 +17,17 @@ describe('lastfm', () => {
   beforeEach(() => {
     fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
-    vi.stubEnv('VITE_LASTFM_API_KEY', 'key');
   });
-  afterEach(() => {
-    vi.unstubAllGlobals();
-    vi.unstubAllEnvs();
-  });
+  afterEach(() => vi.unstubAllGlobals());
 
-  it('artistas parecidos', async () => {
+  it('artistas parecidos, pelo proxy e sem chave no navegador', async () => {
     fetchMock.mockResolvedValue(json({ similarartists: { artist: [{ name: 'John Coltrane' }] } }));
     expect(await getSimilarArtists('Miles Davis')).toEqual(['John Coltrane']);
     const url = fetchMock.mock.calls[0][0] as string;
+    expect(url.startsWith('/api/lastfm?')).toBe(true);
     expect(url).toContain('method=artist.getsimilar');
     expect(url).toContain('artist=Miles+Davis');
-    expect(url).toContain('api_key=key');
+    expect(url).not.toContain('api_key');
   });
 
   it('top álbuns sem entradas "(null)"', async () => {
@@ -44,10 +41,9 @@ describe('lastfm', () => {
     await expect(getSimilarArtists('???')).rejects.toThrow('O Last.fm não respondeu. Tente de novo.');
   });
 
-  it('sem chave configurada avisa', async () => {
-    vi.stubEnv('VITE_LASTFM_API_KEY', '');
-    await expect(getSimilarArtists('Miles Davis')).rejects.toThrow(/VITE_LASTFM_API_KEY/);
-    expect(fetchMock).not.toHaveBeenCalled();
+  it('servidor sem chave configurada avisa', async () => {
+    fetchMock.mockResolvedValue(json({ error: 'missing-key' }, 500));
+    await expect(getSimilarArtists('Miles Davis')).rejects.toThrow(/LASTFM_API_KEY/);
   });
 });
 
@@ -64,12 +60,8 @@ describe('suggestAlbum', () => {
       ),
     );
     vi.stubGlobal('fetch', fetchMock);
-    vi.stubEnv('VITE_LASTFM_API_KEY', 'key');
   });
-  afterEach(() => {
-    vi.unstubAllGlobals();
-    vi.unstubAllEnvs();
-  });
+  afterEach(() => vi.unstubAllGlobals());
 
   it('sugere um álbum de artista parecido, com motivo', async () => {
     vi.mocked(searchDiscs).mockResolvedValue([blueTrain]);

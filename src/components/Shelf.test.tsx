@@ -70,4 +70,35 @@ describe('PlaylistImporter', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Importar do Spotify' }));
     expect(await screen.findByText('Saia e entre de novo para permitir o acesso às suas playlists.')).toBeInTheDocument();
   });
+
+  it('filtra enquanto digito, sem acento e sem diferenciar maiúsculas', async () => {
+    const cafe: Disc = { id: 'p3', uri: 'spotify:playlist:p3', kind: 'playlist', name: 'Café da Manhã', artist: 'Rafael' };
+    vi.mocked(getMyPlaylists).mockClear().mockResolvedValue([jazz, rock, cafe]);
+    render(<PlaylistImporter existingIds={new Set()} onImport={vi.fn()} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Importar do Spotify' }));
+    await userEvent.type(await screen.findByLabelText('Filtrar minhas playlists'), 'CAFE');
+    expect(screen.getByLabelText('Café da Manhã')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Jazz')).not.toBeInTheDocument();
+    expect(getMyPlaylists).toHaveBeenCalledOnce();
+  });
+
+  it('mantém as escolhidas ao trocar o filtro', async () => {
+    vi.mocked(getMyPlaylists).mockResolvedValue([jazz, rock]);
+    const onImport = vi.fn();
+    render(<PlaylistImporter existingIds={new Set()} onImport={onImport} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Importar do Spotify' }));
+    await userEvent.click(await screen.findByLabelText('Rock'));
+    await userEvent.type(screen.getByLabelText('Filtrar minhas playlists'), 'jaz');
+    await userEvent.click(screen.getByLabelText('Jazz'));
+    await userEvent.click(screen.getByRole('button', { name: /Adicionar 2 à estante/ }));
+    expect(onImport).toHaveBeenCalledWith([jazz, rock]);
+  });
+
+  it('avisa quando nada é encontrado', async () => {
+    vi.mocked(getMyPlaylists).mockResolvedValue([jazz, rock]);
+    render(<PlaylistImporter existingIds={new Set()} onImport={vi.fn()} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Importar do Spotify' }));
+    await userEvent.type(await screen.findByLabelText('Filtrar minhas playlists'), 'samba');
+    expect(screen.getByText('Nenhuma playlist encontrada para "samba".')).toBeInTheDocument();
+  });
 });

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { getDevices, getDiscTracks, getMe, getMyPlaylists, parseDiscUri, searchDiscs, spotifyFetch } from './api';
+import { getDevices, getDiscTracks, getMe, getMyPlaylists, getPlaylistDisc, parseDiscUri, searchDiscs, spotifyFetch } from './api';
 import { SpotifyError } from './errors';
 
 vi.mock('./auth', () => ({
@@ -80,12 +80,32 @@ describe('api', () => {
           { id: 'p1', uri: 'spotify:playlist:p1', name: 'Foco', owner: { display_name: 'Rafael' }, images: [{ url: 'img', width: 300 }] },
           null,
         ],
+        next: null,
       }),
     );
     expect(await getMyPlaylists()).toEqual([
       { id: 'p1', uri: 'spotify:playlist:p1', kind: 'playlist', name: 'Foco', artist: 'Rafael', imageUrl: 'img' },
     ]);
-    expect(fetchMock.mock.calls[0][0]).toBe('https://api.spotify.com/v1/me/playlists?limit=50');
+    expect(fetchMock.mock.calls[0][0]).toBe('https://api.spotify.com/v1/me/playlists?limit=50&offset=0');
+  });
+
+  it('carrega todas as páginas de playlists', async () => {
+    const page = (ids: string[], next: string | null) =>
+      json({ items: ids.map((id) => ({ id, uri: `spotify:playlist:${id}`, name: id, owner: { display_name: 'R' }, images: null })), next });
+    fetchMock.mockResolvedValueOnce(page(['p1', 'p2'], 'https://next')).mockResolvedValueOnce(page(['p3'], null));
+    expect((await getMyPlaylists()).map((d) => d.id)).toEqual(['p1', 'p2', 'p3']);
+    expect(fetchMock.mock.calls[1][0]).toContain('offset=50');
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('dados de uma playlist pelo id', async () => {
+    fetchMock.mockResolvedValue(
+      json({ id: 'p9', uri: 'spotify:playlist:p9', name: 'Jazz da Ana', owner: { display_name: 'Ana' }, images: [{ url: 'img', width: 300 }] }),
+    );
+    expect(await getPlaylistDisc('p9')).toEqual({
+      id: 'p9', uri: 'spotify:playlist:p9', kind: 'playlist', name: 'Jazz da Ana', artist: 'Ana', imageUrl: 'img',
+    });
+    expect(fetchMock.mock.calls[0][0]).toContain('/playlists/p9?fields=');
   });
 
   it('lista dispositivos ignorando os sem id', async () => {

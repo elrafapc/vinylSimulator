@@ -1,0 +1,69 @@
+import { fireEvent, render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { describe, expect, it, vi } from 'vitest';
+import type { Disc } from '../spotify/api';
+import { ShelfCarousel } from './ShelfCarousel';
+
+const kob: Disc = { id: 'a1', uri: 'spotify:album:a1', kind: 'album', name: 'Kind of Blue', artist: 'Miles Davis', imageUrl: 'https://img/kob.jpg' };
+const jazz: Disc = { id: 'p1', uri: 'spotify:playlist:p1', kind: 'playlist', name: 'Jazz', artist: 'Rafael' };
+
+function setup(discs: Disc[] = [kob, jazz], selectedId?: string) {
+  const props = { onSelect: vi.fn(), onExpand: vi.fn() };
+  render(<ShelfCarousel discs={discs} selectedId={selectedId} {...props} />);
+  return props;
+}
+
+const track = () => screen.getByRole('list', { name: 'Estante (carrossel)' });
+
+describe('ShelfCarousel', () => {
+  it('mostra as capas em fila e marca a selecionada', () => {
+    setup([kob, jazz], 'p1');
+    expect(within(track()).getAllByRole('button')).toHaveLength(2);
+    expect(screen.getByRole('button', { name: 'Colocar Jazz no toca-discos' })).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('clicar numa capa coloca o disco na vitrola', async () => {
+    const { onSelect } = setup();
+    await userEvent.click(screen.getByRole('button', { name: 'Colocar Kind of Blue no toca-discos' }));
+    expect(onSelect).toHaveBeenCalledWith(kob);
+  });
+
+  it('setas rolam o carrossel', async () => {
+    setup();
+    const scrollBy = vi.fn();
+    track().scrollBy = scrollBy;
+    await userEvent.click(screen.getByRole('button', { name: 'Próximos discos' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Discos anteriores' }));
+    expect(scrollBy.mock.calls.map(([opts]) => Math.sign(opts.left))).toEqual([1, -1]);
+  });
+
+  it('arrastar com o mouse rola e não seleciona o disco', () => {
+    const { onSelect } = setup();
+    // jsdom: PointerEvent sem clientX; vai como MouseEvent com o tipo de ponteiro.
+    const pointer = (type: string, clientX: number) => {
+      const event = new MouseEvent(type, { bubbles: true, clientX });
+      Object.defineProperty(event, 'pointerType', { value: 'mouse' });
+      fireEvent(track(), event);
+    };
+    track().scrollLeft = 100;
+    pointer('pointerdown', 200);
+    pointer('pointermove', 150);
+    expect(track().scrollLeft).toBe(150);
+    pointer('pointerup', 150);
+    fireEvent.click(screen.getByRole('button', { name: 'Colocar Kind of Blue no toca-discos' }));
+    expect(onSelect).not.toHaveBeenCalled();
+  });
+
+  it('"Expandir estante" abre o painel grande', async () => {
+    const { onExpand } = setup();
+    await userEvent.click(screen.getByRole('button', { name: 'Expandir estante (2)' }));
+    expect(onExpand).toHaveBeenCalled();
+  });
+
+  it('estante vazia mostra aviso', () => {
+    setup([]);
+    expect(screen.getByText(/Sua estante está vazia/)).toBeInTheDocument();
+    expect(screen.queryByRole('list')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Expandir estante' })).toBeInTheDocument();
+  });
+});

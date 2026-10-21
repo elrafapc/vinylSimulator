@@ -132,29 +132,51 @@ export async function searchDiscs(query: string, limit = 10): Promise<Disc[]> {
   return [...albums, ...playlists];
 }
 
-interface PlaylistsResponse {
-  items: Array<{
-    id: string;
-    uri: string;
-    name: string;
-    owner: { display_name: string | null };
-    images: SpotifyImage[] | null;
-  } | null>;
+interface PlaylistItem {
+  id: string;
+  uri: string;
+  name: string;
+  owner: { display_name: string | null };
+  images: SpotifyImage[] | null;
 }
 
-export async function getMyPlaylists(limit = 50): Promise<Disc[]> {
-  const params = new URLSearchParams({ limit: String(limit) });
-  const data = (await (await spotifyFetch(`/me/playlists?${params}`)).json()) as PlaylistsResponse;
-  return data.items
-    .filter((item) => item !== null)
-    .map((item) => ({
-      id: item.id,
-      uri: item.uri,
-      kind: 'playlist',
-      name: item.name,
-      artist: item.owner.display_name ?? '',
-      imageUrl: pickImage(item.images ?? undefined),
-    }));
+interface PlaylistsResponse {
+  items: Array<PlaylistItem | null>;
+  next: string | null;
+}
+
+function playlistToDisc(item: PlaylistItem): Disc {
+  return {
+    id: item.id,
+    uri: item.uri,
+    kind: 'playlist',
+    name: item.name,
+    artist: item.owner.display_name ?? '',
+    imageUrl: pickImage(item.images ?? undefined),
+  };
+}
+
+const PLAYLISTS_PAGE = 50;
+// Trava contra paginação sem fim (50 × 40 = 2000 playlists).
+const MAX_PLAYLIST_PAGES = 40;
+
+// Todas as minhas playlists, página por página (o importador filtra localmente).
+export async function getMyPlaylists(): Promise<Disc[]> {
+  const all: Disc[] = [];
+  for (let page = 0; page < MAX_PLAYLIST_PAGES; page++) {
+    const params = new URLSearchParams({ limit: String(PLAYLISTS_PAGE), offset: String(page * PLAYLISTS_PAGE) });
+    const data = (await (await spotifyFetch(`/me/playlists?${params}`)).json()) as PlaylistsResponse;
+    all.push(...data.items.filter((item) => item !== null).map(playlistToDisc));
+    if (!data.next || data.items.length === 0) break;
+  }
+  return all;
+}
+
+// Nome, dono e capa de uma playlist (para guardar na estante uma playlist tocada direto pelo Spotify).
+export async function getPlaylistDisc(id: string): Promise<Disc> {
+  const params = new URLSearchParams({ fields: 'id,uri,name,owner(display_name),images' });
+  const res = await spotifyFetch(`/playlists/${encodeURIComponent(id)}?${params}`);
+  return playlistToDisc((await res.json()) as PlaylistItem);
 }
 
 export interface Track {

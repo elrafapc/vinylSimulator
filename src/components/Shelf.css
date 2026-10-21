@@ -140,6 +140,10 @@
   cursor: not-allowed;
 }
 
+.importer__search {
+  margin-bottom: 10px;
+}
+
 .importer__list {
   max-height: 200px;
   margin: 0 0 12px;
@@ -230,4 +234,156 @@
 
 .shelf-panel__close:hover {
   background: var(--hover);
+}
+
+/* Estante em carrossel no menu (T34). */
+.carousel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.carousel__row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.carousel__track {
+  display: flex;
+  flex: 1;
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+  padding: 10px 2px 8px;
+  list-style: none;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
+  cursor: grab;
+  user-select: none;
+}
+
+.carousel__track li {
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+}
+
+.carousel__disc {
+  display: block;
+  width: 64px;
+  height: 64px;
+  padding: 0;
+  border: 0;
+  border-radius: 3px;
+  background: var(--placeholder);
+  box-shadow: 2px 3px 6px var(--shadow-soft);
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.carousel__disc img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+.carousel__disc:hover,
+.carousel__disc:focus-visible {
+  transform: translateY(-4px);
+}
+
+.carousel__disc:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.carousel__disc--selected {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.carousel__spine {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 4px;
+  color: var(--text);
+  font-size: 0.6rem;
+  text-align: center;
+  overflow: hidden;
+}
+
+.carousel__arrow {
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: none;
+  color: var(--muted);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.carousel__arrow:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+
+.carousel__expand {
+  align-self: flex-start;
+}
+
+@media (max-width: 767px) {
+  /* Fica acima do painel do menu, de onde é aberta. */
+  .shelf-panel {
+    z-index: 30;
+    padding: 12px;
+  }
+
+  .shelf-panel__dialog {
+    padding: 16px;
+  }
+
+  .shelf--large {
+    --cover: 104px;
+    gap: 0 12px;
+    padding: 0 12px;
+  }
+
+}
+
+/* Áreas de toque ≥ 44px: celular e telas de toque. */
+@media (max-width: 767px), (pointer: coarse) {
+  .shelf-panel__close {
+    width: 44px;
+    height: 44px;
+  }
+
+  /* Sem hover no toque: o × fica sempre visível, com área de toque de 44px. */
+  .shelf__remove {
+    opacity: 1;
+  }
+
+  .shelf__remove::before {
+    content: '';
+    position: absolute;
+    inset: -12px;
+  }
+
+  .importer__open,
+  .importer__confirm {
+    min-height: 44px;
+  }
+
+  .importer__list label {
+    min-height: 44px;
+  }
 }

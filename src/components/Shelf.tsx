@@ -57,6 +57,11 @@ interface PlaylistImporterProps {
   onImport: (discs: Disc[]) => void;
 }
 
+// Sem acento e sem diferenciar maiúsculas: "cafe" acha "Café".
+function normalize(text: string): string {
+  return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+}
+
 function importErrorMessage(error: unknown): string {
   if (error instanceof SpotifyError && error.status === 403) {
     return 'Saia e entre de novo para permitir o acesso às suas playlists.';
@@ -67,6 +72,7 @@ function importErrorMessage(error: unknown): string {
 export function PlaylistImporter({ existingIds, onImport }: PlaylistImporterProps) {
   const [playlists, setPlaylists] = useState<Disc[] | null>(null);
   const [chosen, setChosen] = useState<Set<string>>(new Set());
+  const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -76,6 +82,7 @@ export function PlaylistImporter({ existingIds, onImport }: PlaylistImporterProp
     try {
       setPlaylists(await getMyPlaylists());
       setChosen(new Set());
+      setQuery('');
     } catch (e) {
       setError(importErrorMessage(e));
     } finally {
@@ -107,13 +114,28 @@ export function PlaylistImporter({ existingIds, onImport }: PlaylistImporterProp
   }
 
   const available = playlists.filter((p) => !existingIds.has(p.id));
+  // Todas as páginas já vieram de uma vez; o filtro é local, a cada tecla.
+  const term = normalize(query);
+  const shown = term ? available.filter((p) => normalize(p.name).includes(term)) : available;
   return (
     <div className="importer importer--open">
+      {available.length > 0 && (
+        <input
+          type="search"
+          className="album-search__input importer__search"
+          placeholder="Filtrar minhas playlists…"
+          aria-label="Filtrar minhas playlists"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
+      )}
       {available.length === 0 ? (
         <p className="importer__note">Todas as suas playlists já estão na estante.</p>
+      ) : shown.length === 0 ? (
+        <p className="importer__note">Nenhuma playlist encontrada para "{query.trim()}".</p>
       ) : (
         <ul className="importer__list" aria-label="Minhas playlists">
-          {available.map((p) => (
+          {shown.map((p) => (
             <li key={p.id}>
               <label>
                 <input type="checkbox" checked={chosen.has(p.id)} onChange={() => toggle(p.id)} />
