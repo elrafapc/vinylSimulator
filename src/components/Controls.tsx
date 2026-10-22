@@ -1,3 +1,5 @@
+import { NextIcon, PauseIcon, PlayIcon, PrevIcon } from './PlayerIcons';
+
 interface ControlsProps {
   playing: boolean;
   disabled?: boolean;
@@ -10,7 +12,7 @@ export function Controls({ playing, disabled, onPlayPause, onPrev, onNext }: Con
   return (
     <div className="controls">
       <button type="button" className="controls__button" aria-label="Faixa anterior" disabled={disabled} onClick={onPrev}>
-        ⏮
+        <PrevIcon />
       </button>
       <button
         type="button"
@@ -19,10 +21,10 @@ export function Controls({ playing, disabled, onPlayPause, onPrev, onNext }: Con
         disabled={disabled}
         onClick={onPlayPause}
       >
-        {playing ? '❚❚' : '▶'}
+        {playing ? <PauseIcon /> : <PlayIcon />}
       </button>
       <button type="button" className="controls__button" aria-label="Próxima faixa" disabled={disabled} onClick={onNext}>
-        ⏭
+        <NextIcon />
       </button>
     </div>
   );

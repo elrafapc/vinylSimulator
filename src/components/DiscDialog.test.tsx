@@ -37,6 +37,8 @@ describe('DiscDialog', () => {
     setup();
     expect(screen.getByRole('dialog', { name: 'Detalhes de Kind of Blue' })).toBeInTheDocument();
     expect(screen.getByRole('img', { name: 'Capa de Kind of Blue' })).toBeInTheDocument();
+    // T51: o mesmo quadro do bloco Disco, em tamanho grande.
+    expect(screen.getByRole('img', { name: 'Capa de Kind of Blue' }).closest('.disc-frame')).toHaveClass('disc-frame--large');
     const current = await screen.findByText('Freddie Freeloader');
     expect(current.closest('li')).toHaveAttribute('aria-current', 'true');
   });

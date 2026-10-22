@@ -1,4 +1,5 @@
 import type { Disc } from '../spotify/api';
+import { StarIcon } from './PlayerIcons';
 
 interface ShelfToggleProps {
   disc: Disc | null;
@@ -24,7 +25,7 @@ export function ShelfToggle({ disc, onShelf, busy, onToggle }: ShelfToggleProps)
       disabled={!disc || busy}
       onClick={onToggle}
     >
-      {onShelf ? '★' : '☆'}
+      <StarIcon filled={onShelf} />
     </button>
   );
 }

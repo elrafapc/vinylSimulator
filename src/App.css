@@ -257,26 +257,6 @@ button {
   justify-content: center;
 }
 
-.shelf-toggle {
-  width: 40px;
-  height: 40px;
-  border: 1px solid var(--border);
-  border-radius: 50%;
-  background: none;
-  color: var(--accent);
-  font-size: 1.15rem;
-  cursor: pointer;
-}
-
-.shelf-toggle:hover {
-  background: var(--hover);
-}
-
-.shelf-toggle:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
 .deck__menu .controls {
   justify-content: center;
 }
@@ -333,28 +313,16 @@ button {
 }
 
 .details__toggle {
-  width: 44px;
-  height: 44px;
-  padding: 0;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--placeholder);
-  box-shadow: 0 4px 10px var(--shadow-soft);
-  overflow: hidden;
-  cursor: pointer;
-}
-
-.details__toggle img,
-.details__nocover {
   display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
 }
 
 .details__toggle[aria-expanded='true'] {
   outline: 2px solid var(--accent);
-  outline-offset: 2px;
+  outline-offset: 4px;
 }
 
 .details__body {
@@ -365,14 +333,6 @@ button {
   padding: 20px;
   border-radius: 14px;
   background: var(--panel);
-}
-
-.details__cover {
-  width: min(240px, 100%);
-  aspect-ratio: 1;
-  border-radius: 6px;
-  object-fit: cover;
-  box-shadow: 0 10px 24px var(--shadow);
 }
 
 .details__tracks {
@@ -439,62 +399,13 @@ button {
   background: none;
 }
 
-.deck__menu .details__cover {
-  width: min(200px, 100%);
+.deck__menu .disc-frame--large {
+  width: min(280px, 100%);
 }
 
 .deck__menu .details__tracks {
   min-width: 0;
   width: 100%;
-}
-
-.now-playing {
-  width: 100%;
-  margin: 0;
-}
-
-.now-playing p {
-  margin: 0;
-}
-
-.now-playing--idle {
-  color: var(--muted);
-}
-
-.now-playing__track {
-  font-family: Georgia, serif;
-  font-size: 1.3rem;
-  min-height: 1.6rem;
-}
-
-.now-playing__artist {
-  color: var(--accent);
-}
-
-.now-playing__album {
-  color: var(--muted);
-  font-size: 0.85rem;
-}
-
-.now-playing .now-playing__device {
-  margin-top: 8px;
-  color: var(--muted);
-  font-size: 0.8rem;
-}
-
-.now-playing__bar {
-  height: 3px;
-  margin-top: 12px;
-  border-radius: 2px;
-  background: var(--track-bg);
-  overflow: hidden;
-}
-
-.now-playing__bar span {
-  display: block;
-  height: 100%;
-  background: var(--accent);
-  transition: width 1s linear;
 }
 
 .controls {
@@ -503,26 +414,82 @@ button {
   align-items: center;
 }
 
-.controls__button {
+.controls__button,
+.shelf-toggle {
+  /* Teclas de madeira (T50): mesma madeira da prateleira (T52), ícones gravados em latão. */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 48px;
   height: 48px;
-  border: 1px solid var(--border);
-  border-radius: 50%;
-  background: var(--panel);
+  padding: 0;
+  border: 1px solid var(--wood-dark);
+  border-radius: 10px;
+  background:
+    repeating-linear-gradient(100deg, var(--wood-grain) 0 1px, transparent 1px 5px, var(--wood-grain) 5px 6px, transparent 6px 13px),
+    radial-gradient(120% 90% at 30% 20%, var(--wood-light), var(--wood) 55%, var(--wood-dark));
+  box-shadow:
+    inset 1px 1px 0 rgb(255 230 200 / 0.22),
+    inset -1px -2px 0 rgb(0 0 0 / 0.45),
+    0 3px 0 var(--wood-dark),
+    0 5px 8px var(--shadow-soft);
+  color: var(--brass);
+  font-size: 1.25rem;
   cursor: pointer;
+  transition:
+    transform 0.08s ease,
+    box-shadow 0.08s ease;
+}
+
+/* Entalhe: sombra na borda de cima do sulco, luz na de baixo. */
+.controls__button svg,
+.shelf-toggle svg {
+  filter: drop-shadow(0 -1px 0 rgb(0 0 0 / 0.6)) drop-shadow(0 1px 0 rgb(255 230 200 / 0.22));
+}
+
+.controls__button:hover:not(:disabled),
+.shelf-toggle:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.controls__button:active:not(:disabled),
+.shelf-toggle:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow:
+    inset 0 2px 5px rgb(0 0 0 / 0.55),
+    inset 0 0 0 1px rgb(0 0 0 / 0.3),
+    0 0 0 var(--wood-dark);
+}
+
+.controls__button:focus-visible,
+.shelf-toggle:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
 }
 
 .controls__button--main {
   width: 64px;
   height: 64px;
-  background: var(--accent);
-  color: var(--on-accent);
-  border: 0;
-  font-size: 1.2rem;
+  border-radius: 14px;
+  color: var(--paper);
+  font-size: 1.6rem;
 }
 
-.controls__button:disabled {
-  opacity: 0.4;
+.shelf-toggle {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  font-size: 1.1rem;
+}
+
+/* Na estante: estrela cheia em latão claro. */
+.shelf-toggle[aria-pressed='true'] {
+  color: var(--brass-highlight);
+}
+
+.controls__button:disabled,
+.shelf-toggle:disabled {
+  opacity: 0.45;
   cursor: not-allowed;
 }
 
@@ -814,6 +781,326 @@ button {
 .mini-player__play:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+}
+
+/* ===== Menu vintage (T53): painel de madeira, plaquinhas de metal, baquelite, alavancas e faders. ===== */
+
+/* O menu é sempre madeira escura: os tokens de cor são trocados só aqui dentro,
+   então busca, listas, faixas e importador seguem legíveis sem regra própria. */
+.deck__menu {
+  --text: var(--menu-text);
+  --muted: var(--menu-muted);
+  --panel: var(--menu-wood);
+  --border: rgb(255 230 200 / 0.16);
+  --hover: rgb(255 240 220 / 0.07);
+  --input-bg: var(--bakelite);
+  --placeholder: var(--menu-wood-light);
+  --track-bg: rgb(255 240 220 / 0.12);
+  --selected-bg: rgb(227 86 52 / 0.22);
+  --focus: #f0c674;
+  color-scheme: dark;
+  color: var(--text);
+  border-left-color: var(--menu-wood-dark);
+  background:
+    repeating-linear-gradient(92deg, var(--wood-grain) 0 1px, transparent 1px 9px, var(--wood-grain) 9px 10px, transparent 10px 23px),
+    linear-gradient(180deg, var(--menu-wood-light), var(--menu-wood) 18%, var(--menu-wood) 82%, var(--menu-wood-dark));
+  box-shadow: inset 6px 0 12px rgb(0 0 0 / 0.45);
+}
+
+/* Títulos: plaquinha de metal escovado com dois parafusos e texto gravado. */
+.deck__menu h2 {
+  position: relative;
+  align-self: flex-start;
+  padding: 4px 20px;
+  border-radius: 3px;
+  background:
+    repeating-linear-gradient(90deg, rgb(255 255 255 / 0.09) 0 1px, transparent 1px 3px),
+    linear-gradient(180deg, var(--metal-highlight), var(--metal) 70%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.6),
+    inset 0 -1px 0 rgb(0 0 0 / 0.3),
+    0 2px 3px rgb(0 0 0 / 0.5);
+  color: var(--plate-ink);
+  font-weight: 700;
+  text-shadow: 0 1px 0 rgb(255 255 255 / 0.45);
+}
+
+.deck__menu h2::before,
+.deck__menu h2::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #9a9a9a, #3a3a3a 70%);
+  box-shadow: 0 1px 0 rgb(255 255 255 / 0.4);
+  transform: translateY(-50%);
+}
+
+.deck__menu h2::before {
+  left: 6px;
+}
+
+.deck__menu h2::after {
+  right: 6px;
+}
+
+.deck__menu .deck__section-toggle:hover {
+  color: #000;
+}
+
+/* Placa com botão (Sons): o botão já tem altura de toque própria. */
+.deck__menu h2:has(.deck__section-toggle) {
+  padding-block: 0;
+}
+
+/* Baquelite: botões do topo, Sair, Importar/Expandir e "Recolher menu". */
+.theme-toggle,
+.deck__menu-toggle,
+.deck__user .link,
+.deck__menu .importer__open,
+.sheet__close {
+  border: 1px solid rgb(0 0 0 / 0.7);
+  background: linear-gradient(180deg, var(--bakelite-edge), var(--bakelite) 65%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.14),
+    0 2px 0 #000,
+    0 3px 6px rgb(0 0 0 / 0.35);
+  color: var(--paper);
+  text-decoration: none;
+  transition:
+    transform 0.08s ease,
+    box-shadow 0.08s ease;
+}
+
+.theme-toggle {
+  border-radius: 8px;
+  color: var(--brass-highlight);
+}
+
+.deck__user .link {
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+}
+
+.deck__menu-toggle,
+.deck__menu .importer__open {
+  border-radius: 8px;
+}
+
+.sheet__close {
+  border-radius: 8px;
+}
+
+.theme-toggle:hover,
+.deck__menu-toggle:hover,
+.deck__user .link:hover,
+.deck__menu .importer__open:hover:not(:disabled),
+.sheet__close:hover {
+  background: linear-gradient(180deg, var(--bakelite-edge), var(--bakelite) 65%);
+  filter: brightness(1.25);
+}
+
+.theme-toggle:active,
+.deck__menu-toggle:active,
+.deck__user .link:active,
+.deck__menu .importer__open:active:not(:disabled),
+.sheet__close:active {
+  transform: translateY(2px);
+  box-shadow:
+    inset 0 2px 4px rgb(0 0 0 / 0.6),
+    0 0 0 #000;
+}
+
+.theme-toggle:focus-visible,
+.deck__menu-toggle:focus-visible,
+.deck__user .link:focus-visible,
+.deck__menu .importer__open:focus-visible,
+.sheet__close:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.deck__user {
+  gap: 8px;
+}
+
+.deck__user .theme-toggle {
+  margin-left: 0;
+}
+
+/* Campos de busca: placa de baquelite afundada. */
+.deck__menu .album-search__input {
+  border: 1px solid #000;
+  border-radius: 6px;
+  background: var(--bakelite);
+  box-shadow:
+    inset 0 2px 4px rgb(0 0 0 / 0.7),
+    0 1px 0 rgb(255 240 220 / 0.12);
+  color: var(--paper);
+}
+
+.deck__menu .album-search__input::placeholder {
+  color: var(--menu-muted);
+  opacity: 0.85;
+}
+
+.deck__menu .album-search__input:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+
+/* Texto de destaque sobre a madeira: o laranja da marca fica abaixo de 4,5:1; usa o âmbar dos LEDs. */
+.deck__menu .details__track--current,
+.deck__menu .album-search__badge,
+.deck__menu .album-search__fav {
+  color: var(--led-on);
+}
+
+/* Sons: chave de alavanca (com LED) no lugar do botão liga/desliga. */
+.deck__menu .crackle {
+  color: var(--muted);
+}
+
+.deck__menu .crackle__toggle {
+  --led: var(--led-off);
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 0 0 44px;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: var(--muted);
+  text-align: left;
+}
+
+.deck__menu .crackle__toggle[aria-pressed='true'] {
+  --led: var(--led-on);
+  color: var(--text);
+}
+
+/* Placa da chave + LED. */
+.deck__menu .crackle__toggle::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 30px;
+  height: 40px;
+  border-radius: 4px;
+  background:
+    radial-gradient(circle at 50% 11%, var(--led) 0 3px, rgb(0 0 0 / 0.6) 3.5px 4.5px, transparent 5px),
+    radial-gradient(circle at 50% 60%, #222 0 6px, transparent 6.5px),
+    repeating-linear-gradient(90deg, rgb(255 255 255 / 0.08) 0 1px, transparent 1px 3px),
+    linear-gradient(180deg, var(--metal-highlight), var(--metal) 60%, var(--metal-dark));
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.5),
+    0 2px 4px rgb(0 0 0 / 0.5);
+  transform: translateY(-50%);
+}
+
+.deck__menu .crackle__toggle[aria-pressed='true']::before {
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.5),
+    0 2px 4px rgb(0 0 0 / 0.5),
+    0 -12px 10px -6px rgb(255 179 71 / 0.55);
+}
+
+/* Alavanca: aponta para cima ligada, para baixo desligada. */
+.deck__menu .crackle__toggle::after {
+  content: '';
+  position: absolute;
+  left: 12px;
+  top: calc(50% + 4px);
+  width: 6px;
+  height: 15px;
+  border-radius: 3px 3px 2px 2px;
+  background: linear-gradient(90deg, #6b6d70, #eceef0 50%, #6b6d70);
+  box-shadow: 0 2px 2px rgb(0 0 0 / 0.5);
+  transform-origin: 50% 0;
+  transform: rotate(20deg);
+  transition: transform 0.15s ease;
+}
+
+.deck__menu .crackle__toggle[aria-pressed='true']::after {
+  transform: translateY(-15px) rotate(-20deg);
+  transform-origin: 50% 100%;
+}
+
+.deck__menu .crackle__toggle:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .deck__menu .crackle__toggle::after {
+    transition: none;
+  }
+}
+
+/* Faders: trilho afundado com escala, botão metálico retangular. */
+.deck__menu input[type='range'] {
+  appearance: none;
+  -webkit-appearance: none;
+  min-height: 24px;
+  background: repeating-linear-gradient(90deg, var(--menu-muted) 0 1px, transparent 1px 10%) 0 calc(50% + 9px) / 100% 4px no-repeat;
+  cursor: pointer;
+}
+
+.deck__menu input[type='range']::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 3px;
+  background: #0b0705;
+  box-shadow:
+    inset 0 1px 2px rgb(0 0 0 / 0.9),
+    0 1px 0 rgb(255 240 220 / 0.12);
+}
+
+.deck__menu input[type='range']::-moz-range-track {
+  height: 6px;
+  border-radius: 3px;
+  background: #0b0705;
+  box-shadow:
+    inset 0 1px 2px rgb(0 0 0 / 0.9),
+    0 1px 0 rgb(255 240 220 / 0.12);
+}
+
+.deck__menu input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 22px;
+  margin-top: -8px;
+  border: 1px solid #111;
+  border-radius: 2px;
+  background:
+    linear-gradient(180deg, transparent 44%, #1a1a1a 44% 56%, transparent 56%),
+    linear-gradient(90deg, var(--metal-dark), var(--metal-highlight) 50%, var(--metal-dark));
+  box-shadow: 0 2px 3px rgb(0 0 0 / 0.6);
+}
+
+.deck__menu input[type='range']::-moz-range-thumb {
+  width: 12px;
+  height: 22px;
+  border: 1px solid #111;
+  border-radius: 2px;
+  background:
+    linear-gradient(180deg, transparent 44%, #1a1a1a 44% 56%, transparent 56%),
+    linear-gradient(90deg, var(--metal-dark), var(--metal-highlight) 50%, var(--metal-dark));
+  box-shadow: 0 2px 3px rgb(0 0 0 / 0.6);
+}
+
+.deck__menu input[type='range']:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.deck__menu input[type='range']:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
 }
 
 @media (max-width: 767px) {

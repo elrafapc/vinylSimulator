@@ -1,0 +1,182 @@
+/* Display LCD antigo da música atual (T49). Cores em src/theme/theme.css (--lcd-*). */
+
+.lcd {
+  width: 100%;
+  margin: 0;
+  padding: 8px;
+  border-radius: 12px;
+  background: linear-gradient(160deg, var(--lcd-frame-edge), var(--lcd-frame) 35%, var(--lcd-frame) 70%, #000 140%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.12),
+    inset 0 -2px 3px rgb(0 0 0 / 0.5),
+    0 3px 8px var(--shadow-soft);
+  box-sizing: border-box;
+}
+
+.lcd__glass {
+  position: relative;
+  overflow: hidden;
+  padding: 10px 12px 12px;
+  border-radius: 6px;
+  background: radial-gradient(120% 90% at 50% 40%, var(--lcd-glass) 55%, var(--lcd-glass-edge));
+  box-shadow:
+    inset 0 2px 6px rgb(0 0 0 / 0.55),
+    inset 0 0 0 1px rgb(0 0 0 / 0.6);
+  color: var(--lcd-ink);
+  font-family: 'VT323', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  font-size: 1.15rem;
+  line-height: 1.15;
+  text-shadow: 0 0 4px var(--lcd-glow);
+}
+
+/* Linhas de varredura + reflexo diagonal do vidro, por cima do conteúdo. */
+.lcd__glass::before,
+.lcd__glass::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.lcd__glass::before {
+  background: repeating-linear-gradient(to bottom, transparent 0 2px, var(--lcd-scanline) 2px 3px);
+}
+
+.lcd__glass::after {
+  background: linear-gradient(115deg, var(--lcd-reflection) 0%, transparent 38%, transparent 70%, var(--lcd-reflection) 100%);
+  mix-blend-mode: screen;
+}
+
+.lcd p {
+  margin: 0;
+}
+
+.lcd .now-playing__track {
+  font-size: 1.6rem;
+  line-height: 1.1;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.lcd .now-playing__artist,
+.lcd .now-playing__album,
+.lcd .now-playing__device {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.lcd .now-playing__album,
+.lcd .now-playing__device {
+  color: var(--lcd-ink-muted);
+}
+
+.lcd .now-playing__device {
+  margin-top: 6px;
+  font-size: 1rem;
+}
+
+/* Letreiro rolante: duas cópias lado a lado, desloca uma largura inteira. */
+.lcd__marquee {
+  display: flex;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.lcd__marquee-text {
+  flex: none;
+}
+
+.lcd__marquee--scroll .lcd__marquee-text {
+  padding-right: 2.5em;
+  animation: lcd-marquee var(--marquee-s, 10s) linear infinite;
+}
+
+@keyframes lcd-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lcd__marquee--scroll .lcd__marquee-text {
+    animation: none;
+  }
+
+  .lcd__marquee--scroll .lcd__marquee-text:first-child {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .lcd__marquee--scroll .lcd__marquee-text + .lcd__marquee-text {
+    display: none;
+  }
+}
+
+/* Tempo em 7 segmentos. */
+.lcd .lcd__time {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 10px;
+  font-family: 'DSEG7 Classic', ui-monospace, monospace;
+  font-size: 1.25rem;
+}
+
+.lcd__segments {
+  position: relative;
+  display: inline-block;
+}
+
+.lcd__segments-ghost {
+  color: var(--lcd-ink-dim);
+  text-shadow: none;
+}
+
+.lcd__segments-lit {
+  position: absolute;
+  inset: 0 auto auto 0;
+}
+
+.lcd__time-sep {
+  font-family: 'VT323', ui-monospace, monospace;
+  font-size: 1.4rem;
+  color: var(--lcd-ink-muted);
+}
+
+.lcd__sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Barra de progresso em blocos. */
+.lcd__blocks {
+  display: grid;
+  grid-template-columns: repeat(20, 1fr);
+  gap: 3px;
+  height: 10px;
+  margin-top: 10px;
+}
+
+.lcd__block {
+  border-radius: 1px;
+  background: var(--lcd-ink-dim);
+}
+
+.lcd__block--on {
+  background: var(--lcd-ink);
+  box-shadow: 0 0 4px var(--lcd-glow);
+}
+
+.now-playing--idle .now-playing__track {
+  color: var(--lcd-ink-muted);
+}

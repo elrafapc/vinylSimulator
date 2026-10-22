@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { getDiscTracks, parseDiscUri, type Track } from '../spotify/api';
 import { errorMessage } from '../spotify/errors';
+import './DiscFrame.css';
 
 export interface DiscOnTable {
   uri?: string;
@@ -18,6 +19,33 @@ type TracksState = { status: 'loading' } | { status: 'ok'; tracks: Track[] } | {
 function formatDuration(ms: number): string {
   const total = Math.round(ms / 1000);
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
+}
+
+interface DiscFrameProps {
+  imageUrl?: string;
+  /** Texto alternativo da capa; vazio quando o nome já está no botão em volta. */
+  alt: string;
+  size: 'small' | 'large';
+}
+
+// Quadro de parede (T51): moldura preta, passe-partout, capa à esquerda e o vinil saindo pela direita.
+export function DiscFrame({ imageUrl, alt, size }: DiscFrameProps) {
+  return (
+    <span className={`disc-frame disc-frame--${size}`} data-testid="disc-frame">
+      <span className="disc-frame__mat">
+        <span className="disc-frame__window">
+          <span className="disc-frame__vinyl" aria-hidden>
+            <span className="disc-frame__label" style={imageUrl ? { backgroundImage: `url("${imageUrl}")` } : undefined} />
+          </span>
+          {imageUrl ? (
+            <img className="disc-frame__cover" src={imageUrl} alt={alt} />
+          ) : (
+            <span className="disc-frame__cover disc-frame__cover--empty" />
+          )}
+        </span>
+      </span>
+    </span>
+  );
 }
 
 interface DiscInfoProps {
@@ -52,7 +80,7 @@ export function DiscInfo({ disc, currentTrackId }: DiscInfoProps) {
 
   return (
     <div className="details__body">
-      {disc.imageUrl && <img className="details__cover" src={disc.imageUrl} alt={`Capa de ${name}`} />}
+      {disc.imageUrl && <DiscFrame imageUrl={disc.imageUrl} alt={`Capa de ${name}`} size="large" />}
       <div className="details__tracks">
         <h3>{name}</h3>
         {!ref && <p className="details__note">Faixas indisponíveis.</p>}
@@ -95,7 +123,7 @@ export function DiscDetails({ disc, currentTrackId }: DiscDetailsProps) {
         aria-label={expanded ? `Fechar detalhes de ${name}` : `Ver detalhes de ${name}`}
         onClick={() => setExpanded(!expanded)}
       >
-        {disc.imageUrl ? <img src={disc.imageUrl} alt="" /> : <span className="details__nocover" />}
+        <DiscFrame imageUrl={disc.imageUrl} alt="" size="small" />
       </button>
       {expanded && <DiscInfo disc={disc} currentTrackId={currentTrackId} />}
     </section>

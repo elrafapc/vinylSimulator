@@ -263,3 +263,38 @@
   - Polling único: `NowPlayingProvider` (contexto) é o único que consulta `/me/player` — 5s tocando, 20s pausado, parado com a aba oculta (consulta ao voltar), 500ms após uma ação do usuário (tempo do Spotify refletir); próximo ciclo só depois do anterior terminar. A barra de progresso anda localmente entre consultas.
   - Busca: espera 400ms, mínimo 2 caracteres. Knob: envia ao soltar o arrasto ou após 300ms parado (rolagem/setas). `playDisc` reaproveita o dispositivo já conhecido pelo polling (sem listar dispositivos) e dispensa a consulta extra depois de tocar.
 - Consequência: minuto simulado de uso normal (tocar, pausar, abrir estante e detalhes, buscar) = 18 chamadas (teste `usage.test.ts`); tocando parado ~12/min; pausado ~3/min; aba oculta 0. Pause/troca feita no app do Spotify aparece em até ~5s (antes 2s) — o teste da T08 foi ajustado. Regra registrada no CLAUDE.md: nada de polling próprio em componente; sempre pelo cliente único.
+
+## ADR-036 — Display LCD da música atual e materiais do menu vintage
+
+- Data: 2026-10-22
+- Contexto: T49 — primeira task do menu vintage (branch menu-vintage). O bloco "Música atual" vira um display LCD antigo; as próximas tasks (T50–T53) precisam de madeira, metal, baquelite e papel coerentes entre si.
+- Decisão: fontes OFL servidas localmente em `public/fonts/` (DSEG7 Classic v0.46 `.woff2` e VT323 `.ttf`, com as licenças ao lado), declaradas com `@font-face` no `theme.css` e `font-display: swap` (cai em monospace se não carregar); sem pacote npm nem Google Fonts. Materiais como variáveis no `theme.css` (`--wood*`, `--metal*`, `--bakelite*`, `--paper*`, `--lcd-*`), nos dois temas; o LCD é só em cinzas (dark: vidro quase preto; light: vidro cinza-claro com tinta grafite). Display em `NowPlaying.css`: moldura em relevo, linhas de varredura e reflexo por pseudo-elementos, tempo `mm:ss / mm:ss` em 7 segmentos com "88:88" apagado atrás, barra de 20 blocos (mantém `role="progressbar"`), título em letreiro rolante só quando não cabe (medido com `ResizeObserver`; parado com `prefers-reduced-motion`). Tempo e blocos usam o mesmo relógio local da T46 (sem chamadas extras).
+- Consequência: +~158 kB em `public/fonts` (quase tudo o VT323 em `.ttf`, que o Google Fonts não publica em `.woff2` no repositório). Regras antigas `.now-playing*` saíram do `App.css`.
+
+## ADR-037 — Disco num quadro de parede
+
+- Data: 2026-10-22
+- Contexto: T51 — miniatura e detalhes do disco viram um quadro de vinil (inspiração: moldura preta, passe-partout branco, capa à esquerda e o disco saindo pela direita).
+- Decisão: componente `DiscFrame` (em `DiscDetails.tsx`, estilos em `DiscFrame.css`) com `size="small" | "large"`, usado na miniatura do bloco Disco e no `DiscInfo` (que também serve ao `DiscDialog` da estante). Só CSS: moldura com chanfro por gradiente, passe-partout com sombra interna, janela 1,5 : 1, vinil com sulcos (`repeating-radial-gradient`), brilho (`conic-gradient`) e selo feito com a própria capa como fundo (sem segunda `<img>`, então "Capa de X" continua único para leitores de tela). Medidas em % da largura, então o mesmo quadro escala da miniatura (150px) ao expandido (até 340px; 280px no menu). Cores em variáveis novas (`--frame-*`, `--mat*`, `--vinyl*`); no escuro o passe-partout é marfim para não ofuscar. No diálogo o quadro fica ao lado das faixas; no menu lateral, em cima.
+- Consequência: a miniatura deixou de ser o quadradinho de 44px com borda; quando aberta, ganha contorno de destaque em volta do quadro. `formatTime` (T49) foi para `src/components/lcd.ts` para tirar um aviso de lint (fast refresh).
+
+## ADR-038 — Carrossel da estante sobre prateleira de madeira
+
+- Data: 2026-10-22
+- Contexto: T52. A T50 (botões de madeira) ainda não foi feita; a "mesma madeira" é garantida pelas variáveis `--wood*` da T49, que os dois usam.
+- Decisão: só CSS, sem mudar o markup. A tábua (tampo com veio + borda frontal) é o fundo do próprio trilho com rolagem, então fica parada enquanto as capas rolam; capas em pé alinhadas ao tampo, com sombra de contato (`li::after`). Disco atual: borda vermelha trocada por brilho quente na capa e um "spot" de luz no tampo (`li:has(.carousel__disc--selected)`). Setas viram puxadores de latão (`--brass*`); no toque mantêm a forma estreita, com área de toque invisível de 44px. Chips viram etiquetas de papel creme (ponta recortada com furinho, leve inclinação; marcada = papel mais envelhecido + carimbo ✓ em `--stamp`) — também na estante expandida, porque é o mesmo `TagFilter`. A barra de rolagem do trilho foi escondida (rolagem por setas, arrastar, roda/trackpad e toque).
+- Consequência: o brilho do disco atual é contido (o trilho com rolagem corta o que passa da borda). `:has()` exige navegador atual; sem ele só some o spot no tampo.
+
+## ADR-039 — Teclas do player em madeira, ícones em SVG
+
+- Data: 2026-10-22
+- Contexto: T50. Os ícones eram caracteres (⏮ ⏭ ▶ ❚❚ ★ ☆); ⏮/⏭ viram emoji colorido no macOS e não aceitam cor, então não dava para "gravá-los" em latão/creme.
+- Decisão: `src/components/PlayerIcons.tsx` com SVGs inline (`fill: currentColor`, `aria-hidden`), usados só por `Controls` e `ShelfToggle`; nomes acessíveis e `aria-pressed` da estrela inalterados. Teclas em CSS: quadradas com cantos arredondados, madeira das variáveis `--wood*` (a mesma da prateleira da T52) com veio em gradiente, chanfro por sombras internas e "espessura" com sombra sólida embaixo; ícones em latão (`--brass`), play em creme (`--paper`) e maior (64px); entalhe com `drop-shadow` escuro em cima e claro embaixo. Pressionada: desce 3px, perde a espessura e ganha sombra interna. Foco com contorno `--focus`; desabilitada desbotada. Estrela: cheia em latão claro na estante, só contorno fora.
+- Consequência: MiniPlayer (celular), botão ▶ sobre o disco e ☆ da busca seguem com caracteres (fora da T50; podem migrar na T53).
+
+## ADR-040 — Menu lateral como painel de madeira (tokens trocados no escopo do menu)
+
+- Data: 2026-10-22
+- Contexto: T53 — harmonizar o restante do menu com a vitrola, o LCD (T49), as teclas (T50), o quadro (T51) e a prateleira (T52).
+- Decisão: o `.deck__menu` é sempre madeira escura (um tom mais clara no tema light), com texto creme. Em vez de reescrever cada componente, o menu redefine os tokens de cor no próprio escopo (`--text`, `--muted`, `--panel`, `--border`, `--hover`, `--input-bg`, `--placeholder`, `--track-bg`, `--selected-bg`, `--focus`, `color-scheme: dark`); busca, listas, faixas e importador herdam. Títulos viram plaquinhas de metal escovado com parafusos e texto gravado; tema, tela cheia, Sair, "Recolher/☰ Menu", Importar/Expandir e Fechar (celular) viram teclas de baquelite que afundam; campos de busca, placa de baquelite afundada. Sons: o botão liga/desliga vira chave de alavanca com LED âmbar (só CSS, pseudo-elementos; texto e `aria-pressed` iguais) e os `range` viram faders (trilho afundado com escala, botão metálico). Variáveis novas: `--menu-*`, `--plate-ink`, `--led-on/off`. Contraste medido (WCAG): textos ≥ 4,95:1 em todos os pares; o laranja da marca como texto sobre madeira ficava em 3,2–4,3:1, então dentro do menu o destaque de texto (faixa atual, "tocando" e ★ da busca) usa o âmbar `--led-on` (≥ 4,6:1).
+- Consequência: no tema light o menu continua escuro (contraste intencional com o palco claro). Estilo só em CSS; nenhum markup mudou. Fora do escopo: ▶ do MiniPlayer e do disco selecionado (fora do menu).

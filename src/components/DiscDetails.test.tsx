@@ -46,4 +46,25 @@ describe('DiscDetails', () => {
     expect(screen.getByRole('img', { name: 'Capa de Jazz' })).toBeInTheDocument();
     expect(screen.queryByRole('list', { name: 'Faixas' })).not.toBeInTheDocument();
   });
+
+  it('T51: miniatura e expandido aparecem dentro do quadro, com o vinil saindo da capa', async () => {
+    vi.mocked(getDiscTracks).mockResolvedValue(tracks);
+    const { container } = render(<DiscDetails disc={kob} />);
+    const toggle = screen.getByRole('button', { name: 'Ver detalhes de Kind of Blue' });
+    const small = within(toggle).getByTestId('disc-frame');
+    expect(small).toHaveClass('disc-frame--small');
+    expect(small.querySelector('.disc-frame__vinyl')).not.toBeNull();
+    expect(small.querySelector('.disc-frame__label')).toHaveStyle({ backgroundImage: 'url("https://img/kob.jpg")' });
+    await userEvent.click(toggle);
+    const large = container.querySelector('.details__body .disc-frame');
+    expect(large).toHaveClass('disc-frame--large');
+    expect(within(large as HTMLElement).getByRole('img', { name: 'Capa de Kind of Blue' })).toBeInTheDocument();
+  });
+
+  it('T51: sem capa, a miniatura mostra o quadro com espaço vazio', () => {
+    render(<DiscDetails disc={{ uri: 'spotify:album:a1', name: 'Kind of Blue' }} />);
+    const frame = screen.getByTestId('disc-frame');
+    expect(frame.querySelector('.disc-frame__cover--empty')).not.toBeNull();
+    expect(frame.querySelector('img')).toBeNull();
+  });
 });

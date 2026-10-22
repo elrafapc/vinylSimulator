@@ -1,4 +1,17 @@
 /* Todas as cores do app vêm daqui. Tema escuro é o padrão. */
+
+/* Fontes do display (T49), licença OFL, servidas de public/fonts. */
+@font-face {
+  font-family: 'DSEG7 Classic';
+  src: url('/fonts/DSEG7Classic-Regular.woff2') format('woff2');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'VT323';
+  src: url('/fonts/VT323-Regular.ttf') format('truetype');
+  font-display: swap;
+}
 :root,
 :root[data-theme='dark'] {
   color-scheme: dark;
@@ -39,6 +52,57 @@
   --bookcase-joint: rgb(0 0 0 / 0.5);
   --bookcase-grain: rgb(255 214 170 / 0.035);
   --bookcase-shadow: rgb(0 0 0 / 0.6);
+
+  /* Materiais do menu vintage (T49+). */
+  --wood: #4a2e1f;
+  --wood-dark: #2a190f;
+  --wood-light: #6e4630;
+  --wood-grain: rgb(255 214 170 / 0.06);
+  --metal: #8d8f92;
+  --metal-dark: #4c4e51;
+  --metal-highlight: #d9dbde;
+  --bakelite: #1c1715;
+  --bakelite-edge: #3a302b;
+  --paper: #efe6d3;
+  --paper-ink: #2b231c;
+  /* Vidro LCD em tons de cinza. */
+  --lcd-frame: #1b1b1c;
+  --lcd-frame-edge: #3a3a3c;
+  --lcd-glass: #121313;
+  --lcd-glass-edge: #1d1f1f;
+  --lcd-ink: #d6d9d9;
+  --lcd-ink-muted: #9a9e9e;
+  --lcd-ink-dim: rgb(214 217 217 / 0.07);
+  --lcd-glow: rgb(220 225 225 / 0.45);
+  --lcd-scanline: rgb(0 0 0 / 0.28);
+  --lcd-reflection: rgb(255 255 255 / 0.06);
+
+  /* Quadro do disco (T51): moldura preta, passe-partout marfim (não ofusca no escuro). */
+  --frame-wood: #0e0e0e;
+  --frame-edge: #3c3c3c;
+  --mat: #e4dfd5;
+  --mat-bevel: #f7f4ee;
+  --vinyl: #111111;
+  --vinyl-groove: #1f1f1f;
+  --frame-shadow: rgb(0 0 0 / 0.7);
+
+  /* Carrossel na prateleira (T52): latão dos puxadores, etiqueta de papel, luz sobre o disco atual. */
+  --brass: #b08d4a;
+  --brass-dark: #5f4719;
+  --brass-highlight: #f1dca0;
+  --paper-aged: #dccaa6;
+  --stamp: #a3301b;
+  --shelf-light: rgb(255 210 140 / 0.55);
+
+  /* Painel do menu (T53): madeira escura nos dois temas, texto creme. */
+  --menu-wood: #2f1e14;
+  --menu-wood-dark: #1b110a;
+  --menu-wood-light: #4a3020;
+  --menu-text: #f1e6d8;
+  --menu-muted: #c9b8a4;
+  --plate-ink: #1c1a18;
+  --led-on: #ffb347;
+  --led-off: #3b2a14;
 }
 
 :root[data-theme='light'] {
@@ -78,4 +142,54 @@
   --bookcase-joint: rgb(0 0 0 / 0.4);
   --bookcase-grain: rgb(255 220 180 / 0.05);
   --bookcase-shadow: rgb(40 24 12 / 0.45);
+
+  /* Materiais do menu vintage (T49+): mesmos materiais, um tom mais claro. */
+  --wood: #6a4530;
+  --wood-dark: #412818;
+  --wood-light: #9b6c4a;
+  --wood-grain: rgb(255 220 180 / 0.08);
+  --metal: #a7a9ac;
+  --metal-dark: #6b6d70;
+  --metal-highlight: #f1f2f3;
+  --bakelite: #2a221e;
+  --bakelite-edge: #4a3d36;
+  --paper: #f2ebe0;
+  --paper-ink: #2b231c;
+  /* Vidro LCD claro (cinza "reflexivo"), texto grafite. */
+  --lcd-frame: #3a3a3c;
+  --lcd-frame-edge: #5c5c5f;
+  --lcd-glass: #c9ccc9;
+  --lcd-glass-edge: #b4b8b5;
+  --lcd-ink: #1f2222;
+  --lcd-ink-muted: #474b4b;
+  --lcd-ink-dim: rgb(31 34 34 / 0.08);
+  --lcd-glow: rgb(31 34 34 / 0.18);
+  --lcd-scanline: rgb(0 0 0 / 0.06);
+  --lcd-reflection: rgb(255 255 255 / 0.35);
+
+  /* Quadro do disco (T51): passe-partout branco, sombra quente. */
+  --frame-wood: #121212;
+  --frame-edge: #4a4a4a;
+  --mat: #fbfaf6;
+  --mat-bevel: #ffffff;
+  --vinyl: #141414;
+  --vinyl-groove: #242424;
+  --frame-shadow: rgb(60 40 20 / 0.38);
+
+  --brass: #b9944f;
+  --brass-dark: #5f4719;
+  --brass-highlight: #f7e6b4;
+  --paper-aged: #e0cfac;
+  --stamp: #a3301b;
+  --shelf-light: rgb(255 180 90 / 0.6);
+
+  /* Painel do menu (T53): mesma madeira, um tom mais clara. */
+  --menu-wood: #4a3122;
+  --menu-wood-dark: #2e1d13;
+  --menu-wood-light: #6b4630;
+  --menu-text: #f4ebdd;
+  --menu-muted: #d6c6b2;
+  --plate-ink: #1c1a18;
+  --led-on: #ffb347;
+  --led-off: #3b2a14;
 }
