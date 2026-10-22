@@ -9,8 +9,11 @@ const LEGACY_KEY = 'vinil.favorites';
 export const NO_TAG = 'Sem etiqueta';
 export const MAX_TAG = 40;
 
-/** Disco da estante com suas etiquetas (`[]` = sem etiqueta). */
-export type ShelfDisc = Disc & { tags: string[] };
+/**
+ * Disco da estante com suas etiquetas (`[]` = sem etiqueta) e quando entrou (ms; T58).
+ * Discos guardados antes da T58 não têm `addedAt`.
+ */
+export type ShelfDisc = Disc & { tags: string[]; addedAt?: number };
 
 export interface Library {
   version: 3;
@@ -42,9 +45,11 @@ export function tagKey(tag: string): string {
   return tag.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
 }
 
-function toShelfDisc(disc: Disc, tags: string[]): ShelfDisc {
+function toShelfDisc(disc: Disc, tags: string[], addedAt?: unknown): ShelfDisc {
   const { id, uri, kind, name, artist, imageUrl } = disc;
-  return { id, uri, kind, name, artist, imageUrl, tags };
+  const shelfDisc: ShelfDisc = { id, uri, kind, name, artist, imageUrl, tags };
+  if (typeof addedAt === 'number' && Number.isFinite(addedAt)) shelfDisc.addedAt = addedAt;
+  return shelfDisc;
 }
 
 // Leitura defensiva: discos inválidos/repetidos saem; etiquetas vazias, longas ou repetidas também.
@@ -67,7 +72,7 @@ function sanitize(rawDiscs: Array<{ disc: unknown; tags: unknown }>): Library {
       if (!spelling.has(key)) spelling.set(key, trimmed);
       clean.push(spelling.get(key)!);
     }
-    discs.push(toShelfDisc(disc, clean));
+    discs.push(toShelfDisc(disc, clean, (disc as Partial<ShelfDisc>).addedAt));
   }
   return { version: 3, discs };
 }
@@ -143,17 +148,22 @@ export function isFavorite(id: string): boolean {
   return getFavorites().some((f) => f.id === id);
 }
 
-// O mais recente entra na frente da estante; se já estava, mantém as etiquetas.
+// O mais recente entra na frente da estante; se já estava, mantém as etiquetas e a data de entrada.
 export function addFavorite(disc: Disc): Library {
   const lib = getLibrary();
-  const tags = lib.discs.find((d) => d.id === disc.id)?.tags ?? [];
-  return save({ ...lib, discs: [toShelfDisc(disc, tags), ...lib.discs.filter((d) => d.id !== disc.id)] });
+  const old = lib.discs.find((d) => d.id === disc.id);
+  const added = toShelfDisc(disc, old?.tags ?? [], old ? old.addedAt : Date.now());
+  return save({ ...lib, discs: [added, ...lib.discs.filter((d) => d.id !== disc.id)] });
 }
 
 export function addFavorites(discs: Disc[]): Library {
   const lib = getLibrary();
   const byId = new Map(lib.discs.map((d) => [d.id, d]));
-  const added = discs.map((d) => toShelfDisc(d, byId.get(d.id)?.tags ?? []));
+  const now = Date.now();
+  const added = discs.map((d) => {
+    const old = byId.get(d.id);
+    return toShelfDisc(d, old?.tags ?? [], old ? old.addedAt : now);
+  });
   const ids = new Set(added.map((d) => d.id));
   return save({ ...lib, discs: [...added, ...lib.discs.filter((d) => !ids.has(d.id))] });
 }

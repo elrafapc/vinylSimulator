@@ -16,7 +16,7 @@ describe('useFavorites', () => {
     first.unmount();
 
     const { result } = renderHook(() => useFavorites());
-    expect(result.current.favorites).toEqual([{ ...kob, tags: [] }]);
+    expect(result.current.favorites).toEqual([{ ...kob, tags: [], addedAt: expect.any(Number) }]);
     act(() => result.current.toggle(kob));
     expect(result.current.favorites).toEqual([]);
   });

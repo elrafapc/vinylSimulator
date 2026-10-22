@@ -3,44 +3,11 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { getMyPlaylists, type Disc } from '../spotify/api';
 import { SpotifyError } from '../spotify/errors';
-import { PlaylistImporter, Shelf } from './Shelf';
+import { PlaylistImporter } from './Shelf';
 
 vi.mock('../spotify/api', () => ({ getMyPlaylists: vi.fn() }));
 
-const kob: Disc = { id: 'a1', uri: 'spotify:album:a1', kind: 'album', name: 'Kind of Blue', artist: 'Miles Davis', imageUrl: 'https://img/kob.jpg' };
 const jazz: Disc = { id: 'p1', uri: 'spotify:playlist:p1', kind: 'playlist', name: 'Jazz', artist: 'Rafael' };
-
-describe('Shelf', () => {
-  it('estante vazia mostra mensagem', () => {
-    render(<Shelf discs={[]} onSelect={vi.fn()} />);
-    expect(screen.getByText(/Sua estante está vazia/)).toBeInTheDocument();
-  });
-
-  it('mostra os favoritos', () => {
-    render(<Shelf discs={[kob, jazz]} onSelect={vi.fn()} />);
-    expect(screen.getByRole('button', { name: 'Abrir Kind of Blue' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Abrir Jazz' })).toHaveTextContent('Jazz');
-  });
-
-  it('clicar seleciona o disco', async () => {
-    const onSelect = vi.fn();
-    render(<Shelf discs={[kob, jazz]} onSelect={onSelect} />);
-    await userEvent.click(screen.getByRole('button', { name: 'Abrir Jazz' }));
-    expect(onSelect).toHaveBeenCalledWith(jazz);
-  });
-
-  it('marca o disco selecionado', () => {
-    render(<Shelf discs={[kob, jazz]} selectedId="a1" onSelect={vi.fn()} />);
-    expect(screen.getByRole('button', { name: 'Abrir Kind of Blue' })).toHaveAttribute('aria-pressed', 'true');
-  });
-
-  it('tirar da estante chama onRemove', async () => {
-    const onRemove = vi.fn();
-    render(<Shelf discs={[kob]} onSelect={vi.fn()} onRemove={onRemove} />);
-    await userEvent.click(screen.getByRole('button', { name: 'Tirar Kind of Blue da estante' }));
-    expect(onRemove).toHaveBeenCalledWith('a1');
-  });
-});
 
 describe('PlaylistImporter', () => {
   const rock: Disc = { id: 'p2', uri: 'spotify:playlist:p2', kind: 'playlist', name: 'Rock', artist: 'Rafael' };

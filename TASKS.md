@@ -672,7 +672,7 @@ Legenda: [ ] pendente · [~] em andamento · [x] feita · [-] obsoleta (substitu
 
 ## Fase 12 — Coleção
 
-- [ ]  T58 — Tela "Sua coleção" agrupada por etiquetas (substitui a estante expandida)
+- [X]  T58 — Tela "Sua coleção" agrupada por etiquetas (substitui a estante expandida)
   - Depende de: T57
   - Aceite: visual no padrão de docs/design/MENU.md (fundo liso, Lora nos títulos, Inter no resto, âmbar só no ativo; remove a estante de madeira em CSS); cabeçalho: "Sua coleção" + contador discreto, busca na coleção (nome/artista, sem acento), seletor "Organizar por" (Etiquetas | Artista | Adicionados recentemente | Minha ordem), chips de etiqueta que filtram, botão fechar; modo Etiquetas (padrão): uma seção por etiqueta em ordem alfabética, "Sem etiqueta" por último, título "Rock · 6", capas em linha com rolagem horizontal, disco com várias etiquetas aparece em cada seção; demais modos: grade única; arrastar só em "Minha ordem"; modo escolhido persiste; clique na capa abre os detalhes (quadro da T51), hover mostra botão tocar, disco tocando com anel âmbar; lógica de agrupar/ordenar/buscar em src/library/ com testes; Esc fecha; contraste AA
 

@@ -4,7 +4,6 @@ import { describe, expect, it, vi } from 'vitest';
 import type { Disc } from '../spotify/api';
 import { AlbumSearch } from './AlbumSearch';
 import { PlayOverlay } from './PlayOverlay';
-import { Shelf } from './Shelf';
 
 vi.mock('../spotify/api', () => ({ searchDiscs: vi.fn(), getMyPlaylists: vi.fn() }));
 
@@ -32,16 +31,6 @@ describe('PlayOverlay', () => {
   it('tocando, vira pausar', () => {
     render(<PlayOverlay discName="Kind of Blue" playing onPlay={vi.fn()} />);
     expect(screen.getByRole('button', { name: 'Pausar Kind of Blue' })).toBeInTheDocument();
-  });
-
-  it('na estante aparece só sobre o disco selecionado', async () => {
-    const onPlay = vi.fn();
-    const onSelect = vi.fn();
-    render(<Shelf discs={[kob, jazz]} selectedId="p1" onSelect={onSelect} onPlay={onPlay} />);
-    expect(screen.queryByRole('button', { name: 'Tocar Kind of Blue' })).not.toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: 'Tocar Jazz' }));
-    expect(onPlay).toHaveBeenCalledOnce();
-    expect(onSelect).not.toHaveBeenCalled();
   });
 
   it('na busca aparece sobre o resultado selecionado', async () => {

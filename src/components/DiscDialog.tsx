@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import type { ShelfDisc } from '../library/favorites';
 import { DiscInfo } from './DiscDetails';
+import { CloseIcon } from './MenuIcons';
 import { TagInput } from './TagInput';
 
 interface DiscDialogProps {
@@ -44,8 +45,8 @@ export function DiscDialog({ disc, allTags, playing, currentTrackId, onPlay, onR
       }}
     >
       <div className="disc-dialog__box" role="dialog" aria-modal="true" aria-label={`Detalhes de ${disc.name}`}>
-        <button type="button" className="shelf-panel__close disc-dialog__close" aria-label="Fechar detalhes" onClick={onClose}>
-          ×
+        <button type="button" className="icon-button disc-dialog__close" aria-label="Fechar detalhes" onClick={onClose}>
+          <CloseIcon />
         </button>
         <DiscInfo disc={disc} currentTrackId={currentTrackId} />
         <p className="disc-dialog__artist">

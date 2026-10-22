@@ -1,0 +1,364 @@
+/* "Sua coleção" (T58): mesmo sistema do menu (docs/design/MENU.md). Fundo liso, Lora nos títulos, Inter no resto,
+   âmbar só no que está ativo. Só tokens do tema (theme.css), nenhum hex aqui. */
+.collection {
+  --cover: 132px;
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  background: var(--backdrop);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.collection__dialog {
+  display: flex;
+  flex-direction: column;
+  width: min(1100px, 100%);
+  height: min(860px, 100%);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg);
+  box-shadow: 0 30px 80px var(--shadow);
+  overflow: hidden;
+}
+
+/* ---------- Cabeçalho ---------- */
+.collection__header {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px 24px 20px;
+  border-bottom: 1px solid var(--divider);
+}
+
+.collection__titlebar {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.collection__title {
+  margin: 0;
+  font: 600 24px/1.2 Lora, Georgia, serif;
+}
+
+.collection__count {
+  color: var(--text-3);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.collection__close {
+  align-self: center;
+  margin-left: auto;
+}
+
+.collection__tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  align-items: center;
+}
+
+.collection__search {
+  flex: 1 1 280px;
+}
+
+.collection__sort {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.collection__select {
+  height: 44px;
+  padding: 0 36px 0 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  /* Seta desenhada com dois gradientes na cor do texto 3 (sem imagem). */
+  background:
+    linear-gradient(45deg, transparent 50%, var(--text-3) 50%) right 18px center / 5px 5px no-repeat,
+    linear-gradient(-45deg, transparent 50%, var(--text-3) 50%) right 13px center / 5px 5px no-repeat,
+    var(--surface);
+  color: var(--text);
+  font: 500 14px Inter, ui-sans-serif, system-ui, sans-serif;
+  cursor: pointer;
+  appearance: none;
+}
+
+.collection__select:hover {
+  border-color: var(--border-strong);
+}
+
+.collection__select:focus-visible {
+  border-color: var(--amber);
+  outline: none;
+  box-shadow: 0 0 0 3px var(--amber-halo);
+}
+
+.collection .tag-filter {
+  margin-bottom: 0;
+}
+
+/* ---------- Conteúdo ---------- */
+.collection__body {
+  flex: 1;
+  min-height: 0;
+  padding: 24px;
+  overflow-y: auto;
+}
+
+.collection__empty {
+  margin: 0;
+  padding: 24px;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+.collection__note {
+  margin: 0 0 16px;
+  color: var(--text-3);
+  font-size: 13px;
+}
+
+/* Modo Etiquetas: uma seção por etiqueta, capas numa linha com rolagem horizontal. */
+.collection__group + .collection__group {
+  margin-top: 28px;
+  padding-top: 28px;
+  border-top: 1px solid var(--divider);
+}
+
+.collection__group-title {
+  margin: 0 0 12px;
+  font: 600 15px/1.3 Lora, Georgia, serif;
+}
+
+.collection__row {
+  display: grid;
+  grid-auto-columns: var(--cover);
+  grid-auto-flow: column;
+  gap: 16px;
+  margin: 0;
+  /* Espaço para o anel do disco tocando e a sombra não serem cortados. */
+  padding: 4px 4px 8px;
+  list-style: none;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+}
+
+.collection__row > li {
+  scroll-snap-align: start;
+}
+
+/* Demais modos: grade única. */
+.collection__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--cover), 1fr));
+  gap: 24px 16px;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+}
+
+/* ---------- Capa ---------- */
+.collection__item {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.collection__cover {
+  position: relative;
+}
+
+.collection__disc {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: var(--surface-2);
+  box-shadow: 0 2px 6px var(--shadow-soft);
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.collection__disc:hover {
+  transform: translateY(-2px);
+}
+
+.collection__disc img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+/* Disco tocando: anel âmbar de 2px, afastado 2px (como no carrossel do menu). */
+.collection__disc--playing {
+  box-shadow:
+    0 0 0 2px var(--bg),
+    0 0 0 4px var(--amber);
+}
+
+.collection__disc:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--bg),
+    0 0 0 4px var(--amber);
+}
+
+.collection__spine {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 8px;
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
+  overflow: hidden;
+}
+
+.collection__name,
+.collection__artist {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.collection__name {
+  margin-top: 10px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.collection__artist {
+  margin-top: 2px;
+  color: var(--text-3);
+  font-size: 12px;
+}
+
+/* Botão tocar: aparece no hover/foco da capa (no toque, sempre). */
+.collection .play-overlay {
+  right: 8px;
+  bottom: 8px;
+  background: var(--amber);
+  color: var(--on-amber);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.collection .play-overlay:hover {
+  background: var(--amber-hover);
+  filter: none;
+}
+
+.collection .play-overlay:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--bg),
+    0 0 0 4px var(--amber);
+}
+
+.collection__cover:hover .play-overlay,
+.collection__cover:focus-within .play-overlay {
+  opacity: 1;
+}
+
+/* ---------- Arrastar ("Minha ordem") ---------- */
+.collection__grid .collection__disc[aria-roledescription] {
+  cursor: grab;
+  touch-action: manipulation;
+}
+
+.collection__item--dragging {
+  opacity: 0.35;
+}
+
+.collection__drag {
+  width: var(--cover);
+  cursor: grabbing;
+}
+
+.collection__drag img,
+.collection__drag .collection__spine {
+  display: flex;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 4px;
+  background: var(--surface-2);
+  object-fit: cover;
+  box-shadow: 8px 14px 24px var(--shadow);
+  transform: rotate(-3deg) scale(1.04);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .collection__disc {
+    transition: none;
+  }
+
+  .collection__drag img,
+  .collection__drag .collection__spine {
+    transform: none;
+  }
+}
+
+/* ---------- Celular: tela inteira, acima do painel do menu de onde é aberta ---------- */
+@media (max-width: 767px) {
+  .collection {
+    --cover: 104px;
+    z-index: 30;
+    padding: 0;
+  }
+
+  .collection__dialog {
+    width: 100%;
+    height: 100%;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .collection__header {
+    padding: 16px 16px 14px;
+    padding-top: max(16px, env(safe-area-inset-top));
+  }
+
+  .collection__body {
+    padding: 16px;
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
+  }
+
+  .collection__sort {
+    flex: 1 1 100%;
+  }
+
+  .collection__select {
+    flex: 1;
+  }
+}
+
+/* Áreas de toque ≥ 44px e sem hover: o botão tocar fica sempre visível. */
+@media (max-width: 767px), (pointer: coarse) {
+  .collection__close {
+    width: 44px;
+    height: 44px;
+  }
+
+  .collection .play-overlay {
+    opacity: 1;
+  }
+}

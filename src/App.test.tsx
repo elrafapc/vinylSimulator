@@ -162,21 +162,21 @@ describe('App', () => {
     expect(screen.getByRole('complementary', { name: 'Menu' })).toBeVisible();
   });
 
-  it('T19/T40: clicar num disco da estante expandida abre os detalhes por cima, sem fechar a estante', async () => {
+  it('T19/T40/T58: clicar num disco da coleção abre os detalhes por cima, sem fechar a coleção', async () => {
     localStorage.setItem('vinil.favorites', JSON.stringify([kindOfBlue]));
     render(<App />);
     await userEvent.click(await screen.findByRole('button', { name: 'Abrir estante inteira' }));
-    await userEvent.click(within(screen.getByRole('dialog', { name: /^Estante/ })).getByRole('button', { name: 'Abrir Kind of Blue' }));
+    await userEvent.click(within(screen.getByRole('dialog', { name: 'Sua coleção' })).getByRole('button', { name: 'Abrir Kind of Blue' }));
     expect(screen.getByRole('dialog', { name: 'Detalhes de Kind of Blue' })).toBeInTheDocument();
-    expect(screen.getByRole('dialog', { name: /^Estante/ })).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: 'Sua coleção' })).toBeInTheDocument();
     // Não tocou nem trocou o disco da vitrola.
     expect(playDisc).not.toHaveBeenCalled();
     expect(screen.getByRole('img', { name: 'Sem disco' })).toBeInTheDocument();
 
-    // Esc fecha só os detalhes; a estante continua aberta.
+    // Esc fecha só os detalhes; a coleção continua aberta.
     await userEvent.keyboard('{Escape}');
     expect(screen.queryByRole('dialog', { name: 'Detalhes de Kind of Blue' })).not.toBeInTheDocument();
-    expect(screen.getByRole('dialog', { name: /^Estante/ })).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: 'Sua coleção' })).toBeInTheDocument();
   });
 
   it('T17: play sobre o disco selecionado baixa a agulha', async () => {
@@ -224,10 +224,10 @@ describe('App', () => {
     expect(within(screen.getByTestId('console-screen')).getByRole('listitem', { current: true })).toHaveTextContent('Freddie Freeloader');
   });
 
-  it('T55: clicar na gaveta de discos abre a estante', async () => {
+  it('T55/T58: clicar na gaveta de discos abre a coleção', async () => {
     render(<App />);
     await userEvent.click(await screen.findByRole('button', { name: 'Abrir estante' }));
-    expect(screen.getByRole('dialog', { name: /^Estante/ })).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: 'Sua coleção' })).toBeInTheDocument();
   });
 
   it('T32: Sons começa recolhido e abre ao clicar, sem desmontar os controles', async () => {
@@ -374,7 +374,7 @@ describe('App', () => {
     expect(within(menu).getByRole('button', { name: 'Sair' })).toBeInTheDocument();
   });
 
-  it('T44: filtro por etiquetas na estante, igual no carrossel; com filtro o arrastar desliga', async () => {
+  it('T44/T58: filtro por etiquetas na coleção, igual no carrossel; arrastar só em "Minha ordem" sem filtro', async () => {
     const d = (id: string, name: string, tags: string[]) => ({ id, uri: `spotify:album:${id}`, kind: 'album', name, artist: 'X', tags });
     localStorage.setItem(
       'vinil.library',
@@ -382,7 +382,7 @@ describe('App', () => {
     );
     render(<App />);
     await userEvent.click(await screen.findByRole('button', { name: 'Abrir estante inteira' }));
-    const panel = screen.getByRole('dialog', { name: /^Estante/ });
+    const panel = screen.getByRole('dialog', { name: 'Sua coleção' });
     expect(within(panel).getAllByRole('button', { pressed: false }).map((b) => b.textContent)).toEqual(
       expect.arrayContaining(['Jazz', 'Modal', 'Sem etiqueta']),
     );
@@ -390,14 +390,18 @@ describe('App', () => {
     await userEvent.click(within(panel).getByRole('button', { name: 'Jazz' }));
     await userEvent.click(within(panel).getByRole('button', { name: 'Modal' }));
     expect(within(panel).getByText('1 de 3 discos')).toBeInTheDocument();
-    expect(within(panel).getByRole('button', { name: 'Abrir Kind of Blue' })).not.toHaveAttribute('aria-roledescription');
+    // Modo Etiquetas: Kind of Blue aparece na seção de cada etiqueta.
+    expect(within(panel).getAllByRole('button', { name: 'Abrir Kind of Blue' })).toHaveLength(2);
     expect(within(panel).queryByRole('button', { name: 'Abrir Blue Train' })).not.toBeInTheDocument();
 
     // O carrossel do menu segue o mesmo filtro.
     const carousel = screen.getByRole('list', { name: 'Estante (carrossel)' });
     expect(within(carousel).getAllByRole('button').map((b) => b.getAttribute('aria-label'))).toEqual(['Abrir Kind of Blue']);
 
-    await userEvent.click(within(panel).getByRole('button', { name: 'Limpar filtro' }));
+    await userEvent.selectOptions(within(panel).getByRole('combobox', { name: 'Organizar por' }), 'Minha ordem');
+    expect(within(panel).getByRole('button', { name: 'Abrir Kind of Blue' })).not.toHaveAttribute('aria-roledescription');
+
+    await userEvent.click(within(panel).getByRole('button', { name: 'Todas' }));
     expect(within(panel).getByRole('button', { name: 'Abrir Blue Train' })).toHaveAttribute('aria-roledescription', 'sortable');
     expect(within(carousel).getAllByRole('button')).toHaveLength(3);
   });

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Disc } from '../spotify/api';
 import {
   activeFilter,
@@ -61,6 +61,41 @@ describe('estante', () => {
     addFavorites([disc('b'), disc('a')]);
     expect(ids()).toEqual(['b', 'a']);
     expect(tagsOf('a')).toEqual(['Jazz']);
+  });
+});
+
+describe('data de entrada (T58)', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    vi.useFakeTimers();
+  });
+  afterEach(() => vi.useRealTimers());
+  const addedAt = (id: string) => getFavorites().find((d) => d.id === id)?.addedAt;
+
+  it('guarda quando o disco entrou e persiste', () => {
+    vi.setSystemTime(1000);
+    addFavorite(disc('a'));
+    vi.setSystemTime(2000);
+    addFavorites([disc('b'), disc('c')]);
+    expect([addedAt('a'), addedAt('b'), addedAt('c')]).toEqual([1000, 2000, 2000]);
+    expect(stored().discs.find((d: { id: string }) => d.id === 'a').addedAt).toBe(1000);
+  });
+
+  it('favoritar de novo mantém a data original', () => {
+    vi.setSystemTime(1000);
+    addFavorite(disc('a'));
+    vi.setSystemTime(5000);
+    addFavorite(disc('a'));
+    addFavorites([disc('a')]);
+    expect(addedAt('a')).toBe(1000);
+  });
+
+  it('discos antigos ficam sem data; data inválida é descartada', () => {
+    localStorage.setItem(
+      'vinil.library',
+      JSON.stringify({ version: 3, discs: [{ ...disc('a'), tags: [] }, { ...disc('b'), tags: [], addedAt: 'ontem' }] }),
+    );
+    expect(getFavorites().map((d) => 'addedAt' in d)).toEqual([false, false]);
   });
 });
 

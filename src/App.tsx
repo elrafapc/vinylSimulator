@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { AlbumSearch } from './components/AlbumSearch';
 import { AmbientSounds } from './components/AmbientSounds';
+import { Collection } from './components/Collection';
 import { Console } from './components/Console';
 import { Controls } from './components/Controls';
 import { DiscDetails } from './components/DiscDetails';
@@ -15,7 +16,6 @@ import { ThemeToggle } from './components/ThemeToggle';
 import { NowPlaying } from './components/NowPlaying';
 import { PlaylistImporter } from './components/Shelf';
 import { ShelfCarousel } from './components/ShelfCarousel';
-import { ShelfPanel } from './components/ShelfPanel';
 import { ShelfToggle } from './components/ShelfToggle';
 import { TagFilter } from './components/TagFilter';
 import { VolumeControl } from './components/VolumeControl';
@@ -157,7 +157,8 @@ function Deck({ user, onLogout }: DeckProps) {
   // Detalhes de um disco da estante (T40): guardo o id e leio da estante, para refletir etiquetas/remoção.
   const [detailId, setDetailId] = useState<string | null>(null);
   const closeDetails = useCallback(() => setDetailId(null), []);
-  // Filtro por etiquetas (T44): o mesmo na estante expandida e no carrossel; vale só nesta sessão.
+  // Filtro por etiquetas (T44): o mesmo na coleção (T58) e no carrossel; vale só nesta sessão.
+  // Nos dois o contador fica no título (compact), e "Todas" limpa o filtro.
   const [tagFilter, setTagFilter] = useState<string[]>([]);
   const { active: activeTags, discs: visibleDiscs } = applyFilter(tagFilter);
   const filtered = activeTags.length > 0;
@@ -165,9 +166,9 @@ function Deck({ user, onLogout }: DeckProps) {
     setTagFilter((current) =>
       current.some((t) => tagKey(t) === tagKey(tag)) ? current.filter((t) => tagKey(t) !== tagKey(tag)) : [...current, tag],
     );
-  const tagFilterChips = (compact?: boolean) => (
+  const tagFilterChips = (
     <TagFilter
-      compact={compact}
+      compact
       options={tagOptions}
       selected={activeTags}
       shown={visibleDiscs.length}
@@ -269,6 +270,12 @@ function Deck({ user, onLogout }: DeckProps) {
       return;
     }
     void run(() => playDisc(disc.uri, nowPlaying?.deviceId), true, disc);
+  }
+
+  // Botão sobre a capa na coleção (T58): pausa se esse disco já está tocando; senão, toca como em "Tocar".
+  function playOrPauseFromCollection(disc: Disc) {
+    if (playing && nowPlaying?.contextUri === disc.uri) return void run(pause, false);
+    playFromShelf(disc);
   }
 
   // Clique numa faixa da lista do console (T56): toca o disco do prato a partir dela, em ordem.
@@ -433,7 +440,7 @@ function Deck({ user, onLogout }: DeckProps) {
             <ShelfCarousel
               discs={visibleDiscs}
               total={favorites.length}
-              filter={tagFilterChips(true)}
+              filter={tagFilterChips}
               filtered={filtered}
               selectedId={selected?.id}
               onSelect={(disc) => setDetailId(disc.id)}
@@ -473,18 +480,16 @@ function Deck({ user, onLogout }: DeckProps) {
       )}
 
       {shelfOpen && (
-        <ShelfPanel
+        <Collection
           discs={visibleDiscs}
           total={favorites.length}
-          filter={tagFilterChips()}
+          filter={tagFilterChips}
           filtered={filtered}
-          onDrop={drop}
-          selectedId={selected?.id}
-          playingId={playingId}
-          onSelect={(disc) => setDetailId(disc.id)}
-          onRemove={removeFavorite}
-          onPlay={() => void togglePlay()}
+          playingUri={playing ? nowPlaying?.contextUri : undefined}
+          onOpen={(disc) => setDetailId(disc.id)}
+          onPlay={playOrPauseFromCollection}
           onClose={closeShelf}
+          onDrop={drop}
         />
       )}
 
