@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { searchDiscs, type Disc } from '../spotify/api';
 import { errorMessage } from '../spotify/errors';
+import { SearchIcon } from './MenuIcons';
 import { PlayOverlay } from './PlayOverlay';
 
 // T46: espera o usuário parar de digitar e só busca a partir de 2 letras (o resultado fica em cache por termo).
@@ -53,14 +54,17 @@ export function AlbumSearch({ selectedId, favoriteIds, onSelect, onToggleFavorit
 
   return (
     <section className="album-search">
-      <input
-        type="search"
-        className="album-search__input"
-        placeholder="Buscar álbum, artista ou playlist…"
-        aria-label="Buscar álbum"
-        value={query}
-        onChange={(e) => handleChange(e.target.value)}
-      />
+      <label className="field">
+        <SearchIcon />
+        <input
+          type="search"
+          className="field__input"
+          placeholder="Álbum, artista ou playlist"
+          aria-label="Buscar álbum"
+          value={query}
+          onChange={(e) => handleChange(e.target.value)}
+        />
+      </label>
       {loading && <p className="album-search__status">Procurando na estante…</p>}
       {error && <p className="album-search__status album-search__status--error">{error}</p>}
       <ul className="album-search__list">
@@ -72,12 +76,11 @@ export function AlbumSearch({ selectedId, favoriteIds, onSelect, onToggleFavorit
               aria-pressed={disc.id === selectedId}
               onClick={() => onSelect(disc)}
             >
-              {disc.imageUrl ? <img src={disc.imageUrl} alt="" width={48} height={48} /> : <span className="album-search__nocover" />}
+              {disc.imageUrl ? <img src={disc.imageUrl} alt="" width={40} height={40} /> : <span className="album-search__nocover" />}
               <span className="album-search__text">
                 <strong>{disc.name}</strong>
                 <span>
-                  {disc.kind === 'playlist' && <em className="album-search__badge">Playlist</em>}
-                  {disc.artist}
+                  {disc.artist} · {disc.kind === 'playlist' ? 'playlist' : 'álbum'}
                 </span>
               </span>
             </button>

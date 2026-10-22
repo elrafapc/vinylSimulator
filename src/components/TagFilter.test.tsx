@@ -15,7 +15,9 @@ describe('TagFilter', () => {
   it('chips com todas as etiquetas + "Sem etiqueta", marcando as selecionadas (ignora maiúsculas)', () => {
     setup(['jazz']);
     const chips = screen.getAllByRole('button', { pressed: undefined }).filter((b) => b.hasAttribute('aria-pressed'));
-    expect(chips.map((c) => c.textContent)).toEqual(['Jazz', 'Rock', 'Sem etiqueta']);
+    expect(chips.map((c) => c.textContent)).toEqual(['Todas', 'Jazz', 'Rock', 'Sem etiqueta']);
+    expect(screen.getByRole('button', { name: 'Todas' })).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByRole('button', { name: 'Sem etiqueta' })).toHaveClass('chip--dashed');
     expect(screen.getByRole('button', { name: 'Jazz' })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByRole('button', { name: 'Rock' })).toHaveAttribute('aria-pressed', 'false');
   });
@@ -37,6 +39,21 @@ describe('TagFilter', () => {
     setup();
     expect(screen.queryByText(/de 5 discos/)).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Limpar filtro' })).not.toBeInTheDocument();
+  });
+
+  it('T57: "Todas" fica marcada sem filtro e limpa o filtro', async () => {
+    const { onClear, unmount } = setup();
+    expect(screen.getByRole('button', { name: 'Todas' })).toHaveAttribute('aria-pressed', 'true');
+    unmount();
+    const view = setup(['Jazz']);
+    await userEvent.click(screen.getByRole('button', { name: 'Todas' }));
+    expect(view.onClear).toHaveBeenCalled();
+    expect(onClear).not.toHaveBeenCalled();
+  });
+
+  it('T57: no menu (compact) o contador fica de fora (vai para o título da Estante)', () => {
+    render(<TagFilter compact options={['Jazz']} selected={['Jazz']} shown={1} total={5} onToggle={vi.fn()} onClear={vi.fn()} />);
+    expect(screen.queryByText('1 de 5 discos')).not.toBeInTheDocument();
   });
 
   it('ninguém usa etiqueta: não mostra nada', () => {

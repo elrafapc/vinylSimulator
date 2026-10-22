@@ -3,6 +3,7 @@ import { rectSortingStrategy, SortableContext, useSortable } from '@dnd-kit/sort
 import { MOBILE_QUERY, useMediaQuery } from '../hooks/useMediaQuery';
 import { getMyPlaylists, type Disc } from '../spotify/api';
 import { errorMessage, SpotifyError } from '../spotify/errors';
+import { DownloadIcon, SearchIcon } from './MenuIcons';
 import { PlayOverlay } from './PlayOverlay';
 import './Shelf.css';
 
@@ -249,8 +250,11 @@ export function PlaylistImporter({ existingIds, onImport }: PlaylistImporterProp
   if (!playlists) {
     return (
       <div className="importer">
-        <button type="button" className="importer__open" disabled={loading} onClick={() => void open()}>
-          {loading ? 'Carregando playlists…' : 'Importar do Spotify'}
+        <p className="menu-section__lead">Traga suas playlists para a estante.</p>
+        {/* Único botão âmbar do menu (T57). */}
+        <button type="button" className="button button--primary button--wide" disabled={loading} onClick={() => void open()}>
+          <DownloadIcon />
+          {loading ? 'Carregando playlists…' : 'Importar playlists'}
         </button>
         {error && <p className="importer__error">{error}</p>}
       </div>
@@ -264,14 +268,17 @@ export function PlaylistImporter({ existingIds, onImport }: PlaylistImporterProp
   return (
     <div className="importer importer--open">
       {available.length > 0 && (
-        <input
-          type="search"
-          className="album-search__input importer__search"
-          placeholder="Filtrar minhas playlists…"
-          aria-label="Filtrar minhas playlists"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-        />
+        <label className="field importer__search">
+          <SearchIcon />
+          <input
+            type="search"
+            className="field__input"
+            placeholder="Filtrar minhas playlists"
+            aria-label="Filtrar minhas playlists"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+        </label>
       )}
       {available.length === 0 ? (
         <p className="importer__note">Todas as suas playlists já estão na estante.</p>
@@ -290,10 +297,10 @@ export function PlaylistImporter({ existingIds, onImport }: PlaylistImporterProp
         </ul>
       )}
       <div className="importer__actions">
-        <button type="button" className="importer__open" onClick={() => setPlaylists(null)}>
+        <button type="button" className="button" onClick={() => setPlaylists(null)}>
           Cancelar
         </button>
-        <button type="button" className="importer__confirm" disabled={chosen.size === 0} onClick={confirm}>
+        <button type="button" className="button button--primary" disabled={chosen.size === 0} onClick={confirm}>
           Adicionar {chosen.size || ''} à estante
         </button>
       </div>

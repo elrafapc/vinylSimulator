@@ -3,18 +3,19 @@ import { SoundControl } from './SoundControl';
 
 interface CrackleControlProps {
   playing: boolean;
+  onEnabledChange?: (enabled: boolean) => void;
 }
 
-export function CrackleControl({ playing }: CrackleControlProps) {
+export function CrackleControl({ playing, onEnabledChange }: CrackleControlProps) {
   return (
     <SoundControl
       active={playing}
-      labelOn="Chiado ligado"
-      labelOff="Chiado desligado"
+      name="Chiado"
       volumeLabel="Volume do chiado"
       load={loadCracklePrefs}
       save={saveCracklePrefs}
       create={createCrackle}
+      onEnabledChange={onEnabledChange}
     />
   );
 }

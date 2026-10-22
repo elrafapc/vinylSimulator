@@ -49,17 +49,17 @@ describe('PlaylistImporter', () => {
     vi.mocked(getMyPlaylists).mockResolvedValue([jazz, rock]);
     const onImport = vi.fn();
     render(<PlaylistImporter existingIds={new Set()} onImport={onImport} />);
-    await userEvent.click(screen.getByRole('button', { name: 'Importar do Spotify' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Importar playlists' }));
     await userEvent.click(await screen.findByLabelText('Rock'));
     await userEvent.click(screen.getByRole('button', { name: /Adicionar 1 à estante/ }));
     expect(onImport).toHaveBeenCalledWith([rock]);
-    expect(screen.getByRole('button', { name: 'Importar do Spotify' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Importar playlists' })).toBeInTheDocument();
   });
 
   it('esconde as que já estão na estante', async () => {
     vi.mocked(getMyPlaylists).mockResolvedValue([jazz, rock]);
     render(<PlaylistImporter existingIds={new Set(['p1'])} onImport={vi.fn()} />);
-    await userEvent.click(screen.getByRole('button', { name: 'Importar do Spotify' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Importar playlists' }));
     expect(await screen.findByLabelText('Rock')).toBeInTheDocument();
     expect(screen.queryByLabelText('Jazz')).not.toBeInTheDocument();
   });
@@ -67,7 +67,7 @@ describe('PlaylistImporter', () => {
   it('sem permissão pede para entrar de novo', async () => {
     vi.mocked(getMyPlaylists).mockRejectedValue(new SpotifyError('unknown', 403));
     render(<PlaylistImporter existingIds={new Set()} onImport={vi.fn()} />);
-    await userEvent.click(screen.getByRole('button', { name: 'Importar do Spotify' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Importar playlists' }));
     expect(await screen.findByText('Saia e entre de novo para permitir o acesso às suas playlists.')).toBeInTheDocument();
   });
 
@@ -75,7 +75,7 @@ describe('PlaylistImporter', () => {
     const cafe: Disc = { id: 'p3', uri: 'spotify:playlist:p3', kind: 'playlist', name: 'Café da Manhã', artist: 'Rafael' };
     vi.mocked(getMyPlaylists).mockClear().mockResolvedValue([jazz, rock, cafe]);
     render(<PlaylistImporter existingIds={new Set()} onImport={vi.fn()} />);
-    await userEvent.click(screen.getByRole('button', { name: 'Importar do Spotify' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Importar playlists' }));
     await userEvent.type(await screen.findByLabelText('Filtrar minhas playlists'), 'CAFE');
     expect(screen.getByLabelText('Café da Manhã')).toBeInTheDocument();
     expect(screen.queryByLabelText('Jazz')).not.toBeInTheDocument();
@@ -86,7 +86,7 @@ describe('PlaylistImporter', () => {
     vi.mocked(getMyPlaylists).mockResolvedValue([jazz, rock]);
     const onImport = vi.fn();
     render(<PlaylistImporter existingIds={new Set()} onImport={onImport} />);
-    await userEvent.click(screen.getByRole('button', { name: 'Importar do Spotify' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Importar playlists' }));
     await userEvent.click(await screen.findByLabelText('Rock'));
     await userEvent.type(screen.getByLabelText('Filtrar minhas playlists'), 'jaz');
     await userEvent.click(screen.getByLabelText('Jazz'));
@@ -97,7 +97,7 @@ describe('PlaylistImporter', () => {
   it('avisa quando nada é encontrado', async () => {
     vi.mocked(getMyPlaylists).mockResolvedValue([jazz, rock]);
     render(<PlaylistImporter existingIds={new Set()} onImport={vi.fn()} />);
-    await userEvent.click(screen.getByRole('button', { name: 'Importar do Spotify' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Importar playlists' }));
     await userEvent.type(await screen.findByLabelText('Filtrar minhas playlists'), 'samba');
     expect(screen.getByText('Nenhuma playlist encontrada para "samba".')).toBeInTheDocument();
   });

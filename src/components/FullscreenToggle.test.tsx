@@ -33,7 +33,7 @@ describe('FullscreenToggle', () => {
     expect(request).toHaveBeenCalled();
     await userEvent.click(screen.getByRole('button', { name: 'Sair da tela cheia (F)' }));
     expect(exit).toHaveBeenCalled();
-    expect(screen.getByRole('button', { name: 'Tela cheia (F)' })).toHaveTextContent('⤢');
+    expect(screen.getByRole('button', { name: 'Tela cheia (F)' })).toHaveAttribute('aria-pressed', 'false');
   });
 
   it('atalho F alterna, mas não enquanto digita', async () => {

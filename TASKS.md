@@ -669,6 +669,13 @@ Legenda: [ ] pendente · [~] em andamento · [x] feita · [-] obsoleta (substitu
   - Depende de: T56
   - Aceite: estrutura, cores (escuro e claro), tipografia, medidas e estados exatamente como docs/design/MENU.md e as imagens em docs/design/; menu só com cabeçalho, Estante, Buscar discos, Importar do Spotify e Sons ambiente (nessa ordem); fundo do menu igual ao da página, sem texturas (remove madeira, plaquinhas, papel, puxadores e alavancas atuais); "Importar playlists" é o único botão âmbar; Sons começa fechado com resumo do estado; cores viram variáveis de tema (nenhum hex solto nos componentes); fontes Lora e Inter locais em public/fonts; remove código, variáveis e fontes sem uso (incluindo os da T49); contraste AA; foco visível por teclado
 
+
+## Fase 12 — Coleção
+
+- [ ]  T58 — Tela "Sua coleção" agrupada por etiquetas (substitui a estante expandida)
+  - Depende de: T57
+  - Aceite: visual no padrão de docs/design/MENU.md (fundo liso, Lora nos títulos, Inter no resto, âmbar só no ativo; remove a estante de madeira em CSS); cabeçalho: "Sua coleção" + contador discreto, busca na coleção (nome/artista, sem acento), seletor "Organizar por" (Etiquetas | Artista | Adicionados recentemente | Minha ordem), chips de etiqueta que filtram, botão fechar; modo Etiquetas (padrão): uma seção por etiqueta em ordem alfabética, "Sem etiqueta" por último, título "Rock · 6", capas em linha com rolagem horizontal, disco com várias etiquetas aparece em cada seção; demais modos: grade única; arrastar só em "Minha ordem"; modo escolhido persiste; clique na capa abre os detalhes (quadro da T51), hover mostra botão tocar, disco tocando com anel âmbar; lógica de agrupar/ordenar/buscar em src/library/ com testes; Esc fecha; contraste AA
+
 ## Prompt padrão (uma task por sessão, /clear entre tasks)
 
 TAREFA: T0X — <objetivo em 1 linha>

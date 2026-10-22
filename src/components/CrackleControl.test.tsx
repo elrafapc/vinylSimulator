@@ -31,10 +31,10 @@ describe('CrackleControl', () => {
   it('desligar para o chiado e salva a preferência', async () => {
     render(<CrackleControl playing />);
     engine.stop.mockClear();
-    await userEvent.click(screen.getByRole('button', { name: 'Chiado ligado' }));
+    await userEvent.click(screen.getByRole('switch', { name: 'Chiado' }));
     expect(engine.stop).toHaveBeenCalled();
     expect(saveCracklePrefs).toHaveBeenLastCalledWith({ enabled: false, volume: 0.4 });
-    expect(screen.getByRole('button', { name: 'Chiado desligado' })).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByRole('switch', { name: 'Chiado' })).toHaveAttribute('aria-checked', 'false');
   });
 
   it('desligado não toca mesmo com música', () => {

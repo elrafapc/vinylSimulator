@@ -54,16 +54,26 @@ describe('ShelfCarousel', () => {
     expect(onSelect).not.toHaveBeenCalled();
   });
 
-  it('"Expandir estante" abre o painel grande', async () => {
+  it('"Abrir estante inteira" abre o painel grande', async () => {
     const { onExpand } = setup();
-    await userEvent.click(screen.getByRole('button', { name: 'Expandir estante (2)' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Abrir estante inteira' }));
     expect(onExpand).toHaveBeenCalled();
+  });
+
+  it('T57: título "Estante" com contador (e "X de Y" com filtro)', () => {
+    const { rerender } = setup();
+    expect(screen.getByRole('heading', { name: 'Estante' })).toBeInTheDocument();
+    expect(screen.getByText('2 discos')).toBeInTheDocument();
+    rerender(<ShelfCarousel discs={[kob]} total={2} filtered onSelect={vi.fn()} onExpand={vi.fn()} />);
+    expect(screen.getByText('1 de 2 discos')).toBeInTheDocument();
   });
 
   it('estante vazia mostra aviso', () => {
     setup([]);
     expect(screen.getByText(/Sua estante está vazia/)).toBeInTheDocument();
     expect(screen.queryByRole('list')).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Expandir estante' })).toBeInTheDocument();
+    expect(screen.getByText('0 discos')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Próximos discos' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Abrir estante inteira' })).toBeInTheDocument();
   });
 });

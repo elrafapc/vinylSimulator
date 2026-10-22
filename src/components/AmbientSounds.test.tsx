@@ -37,7 +37,7 @@ describe('AmbientSounds', () => {
 
   it('os três tocam juntos com volumes independentes', async () => {
     render(<AmbientSounds playing />);
-    await userEvent.click(screen.getByRole('button', { name: 'Lareira desligada' }));
+    await userEvent.click(screen.getByRole('switch', { name: 'Lareira', hidden: true }));
     expect(engineFor('crackle').start).toHaveBeenCalled();
     expect(engineFor('rain').start).toHaveBeenCalled();
     expect(engineFor('fire').start).toHaveBeenCalled();
@@ -45,6 +45,17 @@ describe('AmbientSounds', () => {
     expect(screen.getByLabelText('Volume da chuva')).toHaveValue('0.5');
     expect(screen.getByLabelText('Volume da lareira')).toHaveValue('0.4');
     expect(createAmbient).toHaveBeenCalledTimes(2);
+  });
+
+  it('T57: começa fechado, com o resumo do estado; o resumo acompanha os interruptores', async () => {
+    render(<AmbientSounds playing />);
+    const toggle = screen.getByRole('button', { name: /Sons ambiente/ });
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    expect(toggle).toHaveTextContent('Chiado e chuva ligados · lareira desligada');
+    expect(screen.getByRole('switch', { name: 'Chiado', hidden: true })).not.toBeVisible();
+    await userEvent.click(toggle);
+    await userEvent.click(screen.getByRole('switch', { name: 'Chiado' }));
+    expect(toggle).toHaveTextContent('Chuva ligada · chiado e lareira desligados');
   });
 
   it('pausar a música para só a agulha', () => {

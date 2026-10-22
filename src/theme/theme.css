@@ -13,11 +13,19 @@
   font-display: swap;
 }
 
-/* Tela do console (T55): Lora variável (400–500), só o subconjunto latino (cobre os acentos do português). */
+/* Lora (tela do console e títulos do menu) e Inter (controles do menu): variáveis, só o subconjunto
+   latino (cobre os acentos do português), licença OFL, servidas de public/fonts (T55/T57). */
 @font-face {
   font-family: 'Lora';
   src: url('/fonts/Lora-Variable-latin.woff2') format('woff2');
-  font-weight: 400 500;
+  font-weight: 400 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: url('/fonts/Inter-Variable-latin.woff2') format('woff2');
+  font-weight: 100 900;
   font-display: swap;
 }
 :root,
@@ -25,27 +33,48 @@
   color-scheme: dark;
   /* Fundo liso da página inteira (palco e menu): a base do console é recortada, sem mesa. */
   --bg: #14100d;
-  --panel: #211a16;
-  --text: #f1e6d8;
-  --muted: #a8998a;
+  /* Sistema do menu (T57, docs/design/MENU.md). */
+  --surface: #1c1713;
+  --surface-2: #231c17;
+  --border-strong: #3a3028;
+  --divider: #2a221c;
+  --text: #ebdcc5;
+  --muted: #b2a591;
+  --text-3: #8a7f70;
+  --amber: #d89257;
+  --amber-hover: #e8a872;
+  --amber-text: #e8a872;
+  --on-amber: #1a120c;
+  --chip-active-bg: rgb(216 146 87 / 0.14);
+  --amber-halo: rgb(216 146 87 / 0.2);
+  --panel: var(--surface);
   /* Laranja da marca (BRAND.md). */
   --accent: #e35634;
   --on-accent: #1e1b18;
   --danger: #ff7a5c;
   --danger-bg: rgb(255 122 92 / 0.12);
-  --border: rgb(255 255 255 / 0.13);
-  --input-bg: #15100d;
-  --hover: rgb(255 255 255 / 0.05);
+  --border: #2c241e;
+  --input-bg: var(--surface);
+  --hover: var(--surface-2);
   --selected-bg: rgb(227 86 52 / 0.16);
-  --track-bg: rgb(255 255 255 / 0.1);
   --placeholder: #333;
-  --focus: #f0c674;
+  --focus: var(--amber);
   --backdrop: rgb(0 0 0 / 0.6);
 
   --shadow: rgb(0 0 0 / 0.55);
   /* A foto da vitrola é a mesma nos dois temas; no escuro, um pouco mais apagada. */
   --turntable-filter: brightness(0.9);
   --console-shadow: rgb(0 0 0 / 0.55);
+  /* Tela do console (CONSOLE.md): faz parte da foto, igual nos dois temas. */
+  --screen-track: #ebdcc5;
+  --screen-artist: #b2a591;
+  --screen-album: #837a6c;
+  --screen-times: #a59b87;
+  --screen-list: #c8bca8;
+  --screen-duration: #a99d8a;
+  --screen-amber: #d89257;
+  --screen-amber-glow: rgb(216 146 87 / 0.5);
+  --screen-panel: #13100d;
   --shadow-soft: rgb(0 0 0 / 0.4);
 
   --shelf-back: #1a1411;
@@ -62,18 +91,12 @@
   --bookcase-grain: rgb(255 214 170 / 0.035);
   --bookcase-shadow: rgb(0 0 0 / 0.6);
 
-  /* Materiais do menu vintage (T49+). */
+  /* Materiais da T49 que ainda servem ao celular (teclas do player, LCD). */
   --wood: #4a2e1f;
   --wood-dark: #2a190f;
   --wood-light: #6e4630;
   --wood-grain: rgb(255 214 170 / 0.06);
-  --metal: #8d8f92;
-  --metal-dark: #4c4e51;
-  --metal-highlight: #d9dbde;
-  --bakelite: #1c1715;
-  --bakelite-edge: #3a302b;
   --paper: #efe6d3;
-  --paper-ink: #2b231c;
   /* Vidro LCD em tons de cinza. */
   --lcd-frame: #1b1b1c;
   --lcd-frame-edge: #3a3a3c;
@@ -95,42 +118,38 @@
   --vinyl-groove: #1f1f1f;
   --frame-shadow: rgb(0 0 0 / 0.7);
 
-  /* Carrossel na prateleira (T52): latão dos puxadores, etiqueta de papel, luz sobre o disco atual. */
+  /* Latão dos ícones das teclas do player (celular). */
   --brass: #b08d4a;
-  --brass-dark: #5f4719;
   --brass-highlight: #f1dca0;
-  --paper-aged: #dccaa6;
-  --stamp: #a3301b;
-  --shelf-light: rgb(255 210 140 / 0.55);
-
-  /* Painel do menu (T53): madeira escura nos dois temas, texto creme. */
-  --menu-wood: #2f1e14;
-  --menu-wood-dark: #1b110a;
-  --menu-wood-light: #4a3020;
-  --menu-text: #f1e6d8;
-  --menu-muted: #c9b8a4;
-  --plate-ink: #1c1a18;
-  --led-on: #ffb347;
-  --led-off: #3b2a14;
 }
 
 :root[data-theme='light'] {
   color-scheme: light;
   --bg: #ece6dc;
-  --panel: #fbf6ef;
-  --text: #2b211a;
-  --muted: #7a6b5d;
+  --surface: #f6f1e9;
+  --surface-2: #efe8dd;
+  --border-strong: #bfb2a3;
+  --divider: #d6cbbe;
+  --text: #2a211b;
+  --muted: #5e5145;
+  --text-3: #6b5d50;
+  --amber: #c97b3d;
+  --amber-hover: #b86c32;
+  --amber-text: #8a4a1f;
+  --on-amber: #1a120c;
+  --chip-active-bg: rgb(201 123 61 / 0.16);
+  --amber-halo: rgb(201 123 61 / 0.2);
+  --panel: var(--surface);
   --accent: #e35634;
   --on-accent: #1e1b18;
   --danger: #b3361b;
   --danger-bg: rgb(179 54 27 / 0.1);
-  --border: rgb(0 0 0 / 0.12);
-  --input-bg: #ffffff;
-  --hover: rgb(0 0 0 / 0.04);
+  --border: #d6cbbe;
+  --input-bg: var(--surface);
+  --hover: var(--surface-2);
   --selected-bg: rgb(227 86 52 / 0.13);
-  --track-bg: rgb(0 0 0 / 0.1);
   --placeholder: #ddd3c6;
-  --focus: #e35634;
+  --focus: var(--amber);
   --backdrop: rgb(40 28 18 / 0.45);
 
   --shadow: rgb(60 40 20 / 0.32);
@@ -152,18 +171,12 @@
   --bookcase-grain: rgb(255 220 180 / 0.05);
   --bookcase-shadow: rgb(40 24 12 / 0.45);
 
-  /* Materiais do menu vintage (T49+): mesmos materiais, um tom mais claro. */
+  /* Materiais da T49 que ainda servem ao celular: mesmos materiais, um tom mais claro. */
   --wood: #6a4530;
   --wood-dark: #412818;
   --wood-light: #9b6c4a;
   --wood-grain: rgb(255 220 180 / 0.08);
-  --metal: #a7a9ac;
-  --metal-dark: #6b6d70;
-  --metal-highlight: #f1f2f3;
-  --bakelite: #2a221e;
-  --bakelite-edge: #4a3d36;
   --paper: #f2ebe0;
-  --paper-ink: #2b231c;
   /* Vidro LCD claro (cinza "reflexivo"), texto grafite. */
   --lcd-frame: #3a3a3c;
   --lcd-frame-edge: #5c5c5f;
@@ -186,19 +199,5 @@
   --frame-shadow: rgb(60 40 20 / 0.38);
 
   --brass: #b9944f;
-  --brass-dark: #5f4719;
   --brass-highlight: #f7e6b4;
-  --paper-aged: #e0cfac;
-  --stamp: #a3301b;
-  --shelf-light: rgb(255 180 90 / 0.6);
-
-  /* Painel do menu (T53): mesma madeira, um tom mais clara. */
-  --menu-wood: #4a3122;
-  --menu-wood-dark: #2e1d13;
-  --menu-wood-light: #6b4630;
-  --menu-text: #f4ebdd;
-  --menu-muted: #d6c6b2;
-  --plate-ink: #1c1a18;
-  --led-on: #ffb347;
-  --led-off: #3b2a14;
 }

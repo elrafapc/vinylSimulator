@@ -81,21 +81,6 @@ button {
   filter: brightness(1.08);
 }
 
-.theme-toggle {
-  width: 36px;
-  height: 36px;
-  margin-left: 16px;
-  border: 1px solid var(--border);
-  border-radius: 50%;
-  background: var(--panel);
-  color: var(--text);
-  cursor: pointer;
-}
-
-.theme-toggle:hover {
-  background: var(--hover);
-}
-
 .corner {
   position: fixed;
   top: 24px;
@@ -130,7 +115,8 @@ button {
 
 .deck {
   display: grid;
-  grid-template-columns: minmax(0, 7fr) minmax(300px, 3fr);
+  /* Menu com 400px (T57, docs/design/MENU.md); o palco fica com o resto. */
+  grid-template-columns: minmax(0, 1fr) 400px;
   min-height: 100vh;
 }
 
@@ -159,20 +145,6 @@ button {
   justify-content: space-between;
   padding-block: 20px 12px;
   background: var(--bg);
-}
-
-.deck__menu-toggle {
-  padding: 6px 14px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: var(--panel);
-  color: var(--muted);
-  font-size: 0.85rem;
-  cursor: pointer;
-}
-
-.deck__menu-toggle:hover {
-  background: var(--hover);
 }
 
 /* Rodapé no fim do palco, à direita: nunca cobre a vitrola nem o menu;
@@ -209,9 +181,7 @@ button {
   top: 0;
   display: flex;
   flex-direction: column;
-  gap: 12px;
   height: 100vh;
-  padding: 24px;
   overflow-y: auto;
   /* Mesmo fundo da página; a separação é só uma linha sutil. */
   border-left: 1px solid var(--border);
@@ -220,34 +190,6 @@ button {
 
 .deck__menu[hidden] {
   display: none;
-}
-
-.deck__menu h2 {
-  margin: 16px 0 0;
-  font-size: 0.8rem;
-  font-weight: 600;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-
-.deck__section-toggle {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  width: 100%;
-  padding: 0;
-  border: 0;
-  background: none;
-  font: inherit;
-  letter-spacing: inherit;
-  text-transform: inherit;
-  color: inherit;
-  cursor: pointer;
-}
-
-.deck__section-toggle:hover {
-  color: var(--text);
 }
 
 .player-row {
@@ -259,23 +201,6 @@ button {
 
 .deck__menu .controls {
   justify-content: center;
-}
-
-.deck__user {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  color: var(--muted);
-}
-
-.sounds {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.sounds .crackle__toggle {
-  min-width: 140px;
 }
 
 .play-overlay {
@@ -521,151 +446,6 @@ button {
   color: var(--danger);
 }
 
-.crackle {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  color: var(--muted);
-  font-size: 0.85rem;
-}
-
-.crackle__toggle {
-  padding: 6px 14px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: var(--panel);
-  color: var(--muted);
-  cursor: pointer;
-}
-
-.crackle__toggle[aria-pressed='true'] {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
-.crackle__volume {
-  width: 120px;
-  accent-color: var(--accent);
-}
-
-.album-search__input {
-  width: 100%;
-  padding: 10px 14px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--input-bg);
-  color: var(--text);
-  font: inherit;
-}
-
-.album-search__status {
-  margin: 12px 0 0;
-  color: var(--muted);
-  font-size: 0.9rem;
-}
-
-.album-search__status--error {
-  color: var(--danger);
-}
-
-.album-search__list {
-  margin: 12px 0 0;
-  padding: 0;
-  list-style: none;
-  max-height: 60vh;
-  overflow-y: auto;
-}
-
-.album-search__row {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.album-search__fav {
-  flex-shrink: 0;
-  width: 36px;
-  height: 36px;
-  border: 0;
-  border-radius: 50%;
-  background: none;
-  color: var(--accent);
-  font-size: 1.1rem;
-  cursor: pointer;
-}
-
-.album-search__fav:hover {
-  background: var(--hover);
-}
-
-.album-search__item {
-  display: flex;
-  flex: 1;
-  min-width: 0;
-  gap: 12px;
-  align-items: center;
-  padding: 8px;
-  border: 0;
-  border-radius: 8px;
-  background: none;
-  text-align: left;
-  cursor: pointer;
-}
-
-.album-search__item:hover {
-  background: var(--hover);
-}
-
-.album-search__item--selected {
-  background: var(--selected-bg);
-}
-
-.album-search__row .play-overlay {
-  left: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-}
-
-.album-search__item img,
-.album-search__nocover {
-  width: 48px;
-  height: 48px;
-  flex-shrink: 0;
-  border-radius: 4px;
-  background: var(--placeholder);
-  object-fit: cover;
-}
-
-.album-search__text {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.album-search__text strong,
-.album-search__text span {
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-.album-search__text span {
-  color: var(--muted);
-  font-size: 0.85rem;
-}
-
-.album-search__badge {
-  margin-right: 6px;
-  padding: 1px 6px;
-  border-radius: 4px;
-  background: var(--selected-bg);
-  color: var(--accent);
-  font-size: 0.7rem;
-  font-style: normal;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
 /* ---------- Celular (T36): abaixo de 768px ---------- */
 
 /* Painel do menu e barrinha: só existem no celular (o JSX só os monta lá). */
@@ -783,320 +563,6 @@ button {
   cursor: not-allowed;
 }
 
-/* ===== Menu vintage (T53): painel de madeira, plaquinhas de metal, baquelite, alavancas e faders. ===== */
-
-/* Menu com o fundo liso da página (sem madeira). No escuro, os tokens de texto creme do menu
-   são trocados só aqui dentro; no claro, valem os do tema (texto escuro sobre o fundo claro). */
-:root:not([data-theme='light']) .deck__menu {
-  --text: var(--menu-text);
-  --muted: var(--menu-muted);
-  --border: rgb(255 230 200 / 0.1);
-  --hover: rgb(255 240 220 / 0.07);
-  --input-bg: var(--bakelite);
-  --placeholder: var(--menu-wood-light);
-  --track-bg: rgb(255 240 220 / 0.12);
-  --selected-bg: rgb(227 86 52 / 0.22);
-  --focus: #f0c674;
-  color-scheme: dark;
-  color: var(--text);
-}
-
-/* Títulos: plaquinha de metal escovado com dois parafusos e texto gravado. */
-.deck__menu h2 {
-  position: relative;
-  align-self: flex-start;
-  padding: 4px 20px;
-  border-radius: 3px;
-  background:
-    repeating-linear-gradient(90deg, rgb(255 255 255 / 0.09) 0 1px, transparent 1px 3px),
-    linear-gradient(180deg, var(--metal-highlight), var(--metal) 70%);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.6),
-    inset 0 -1px 0 rgb(0 0 0 / 0.3),
-    0 2px 3px rgb(0 0 0 / 0.5);
-  color: var(--plate-ink);
-  font-weight: 700;
-  text-shadow: 0 1px 0 rgb(255 255 255 / 0.45);
-}
-
-.deck__menu h2::before,
-.deck__menu h2::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 35% 35%, #9a9a9a, #3a3a3a 70%);
-  box-shadow: 0 1px 0 rgb(255 255 255 / 0.4);
-  transform: translateY(-50%);
-}
-
-.deck__menu h2::before {
-  left: 6px;
-}
-
-.deck__menu h2::after {
-  right: 6px;
-}
-
-.deck__menu .deck__section-toggle:hover {
-  color: #000;
-}
-
-/* Placa com botão (Sons): o botão já tem altura de toque própria. */
-.deck__menu h2:has(.deck__section-toggle) {
-  padding-block: 0;
-}
-
-/* Baquelite: botões do topo, Sair, Importar/Expandir e "Recolher menu". */
-.theme-toggle,
-.deck__menu-toggle,
-.deck__user .link,
-.deck__menu .importer__open,
-.sheet__close {
-  border: 1px solid rgb(0 0 0 / 0.7);
-  background: linear-gradient(180deg, var(--bakelite-edge), var(--bakelite) 65%);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.14),
-    0 2px 0 #000,
-    0 3px 6px rgb(0 0 0 / 0.35);
-  color: var(--paper);
-  text-decoration: none;
-  transition:
-    transform 0.08s ease,
-    box-shadow 0.08s ease;
-}
-
-.theme-toggle {
-  border-radius: 8px;
-  color: var(--brass-highlight);
-}
-
-.deck__user .link {
-  padding: 4px 12px;
-  border-radius: 6px;
-  font-size: 0.85rem;
-}
-
-.deck__menu-toggle,
-.deck__menu .importer__open {
-  border-radius: 8px;
-}
-
-.sheet__close {
-  border-radius: 8px;
-}
-
-.theme-toggle:hover,
-.deck__menu-toggle:hover,
-.deck__user .link:hover,
-.deck__menu .importer__open:hover:not(:disabled),
-.sheet__close:hover {
-  background: linear-gradient(180deg, var(--bakelite-edge), var(--bakelite) 65%);
-  filter: brightness(1.25);
-}
-
-.theme-toggle:active,
-.deck__menu-toggle:active,
-.deck__user .link:active,
-.deck__menu .importer__open:active:not(:disabled),
-.sheet__close:active {
-  transform: translateY(2px);
-  box-shadow:
-    inset 0 2px 4px rgb(0 0 0 / 0.6),
-    0 0 0 #000;
-}
-
-.theme-toggle:focus-visible,
-.deck__menu-toggle:focus-visible,
-.deck__user .link:focus-visible,
-.deck__menu .importer__open:focus-visible,
-.sheet__close:focus-visible {
-  outline: 2px solid var(--focus);
-  outline-offset: 2px;
-}
-
-.deck__user {
-  gap: 8px;
-}
-
-.deck__user .theme-toggle {
-  margin-left: 0;
-}
-
-/* Campos de busca: placa de baquelite afundada. */
-.deck__menu .album-search__input {
-  border: 1px solid #000;
-  border-radius: 6px;
-  background: var(--bakelite);
-  box-shadow:
-    inset 0 2px 4px rgb(0 0 0 / 0.7),
-    0 1px 0 rgb(255 240 220 / 0.12);
-  color: var(--paper);
-}
-
-.deck__menu .album-search__input::placeholder {
-  color: var(--menu-muted);
-  opacity: 0.85;
-}
-
-.deck__menu .album-search__input:focus-visible {
-  outline: 2px solid var(--focus);
-  outline-offset: 1px;
-}
-
-/* Texto de destaque sobre a madeira: o laranja da marca fica abaixo de 4,5:1; usa o âmbar dos LEDs. */
-.deck__menu .details__track--current,
-.deck__menu .album-search__badge,
-.deck__menu .album-search__fav {
-  color: var(--led-on);
-}
-
-/* Sons: chave de alavanca (com LED) no lugar do botão liga/desliga. */
-.deck__menu .crackle {
-  color: var(--muted);
-}
-
-.deck__menu .crackle__toggle {
-  --led: var(--led-off);
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-  padding: 0 0 0 44px;
-  border: 0;
-  border-radius: 0;
-  background: none;
-  color: var(--muted);
-  text-align: left;
-}
-
-.deck__menu .crackle__toggle[aria-pressed='true'] {
-  --led: var(--led-on);
-  color: var(--text);
-}
-
-/* Placa da chave + LED. */
-.deck__menu .crackle__toggle::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 0;
-  width: 30px;
-  height: 40px;
-  border-radius: 4px;
-  background:
-    radial-gradient(circle at 50% 11%, var(--led) 0 3px, rgb(0 0 0 / 0.6) 3.5px 4.5px, transparent 5px),
-    radial-gradient(circle at 50% 60%, #222 0 6px, transparent 6.5px),
-    repeating-linear-gradient(90deg, rgb(255 255 255 / 0.08) 0 1px, transparent 1px 3px),
-    linear-gradient(180deg, var(--metal-highlight), var(--metal) 60%, var(--metal-dark));
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.5),
-    0 2px 4px rgb(0 0 0 / 0.5);
-  transform: translateY(-50%);
-}
-
-.deck__menu .crackle__toggle[aria-pressed='true']::before {
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.5),
-    0 2px 4px rgb(0 0 0 / 0.5),
-    0 -12px 10px -6px rgb(255 179 71 / 0.55);
-}
-
-/* Alavanca: aponta para cima ligada, para baixo desligada. */
-.deck__menu .crackle__toggle::after {
-  content: '';
-  position: absolute;
-  left: 12px;
-  top: calc(50% + 4px);
-  width: 6px;
-  height: 15px;
-  border-radius: 3px 3px 2px 2px;
-  background: linear-gradient(90deg, #6b6d70, #eceef0 50%, #6b6d70);
-  box-shadow: 0 2px 2px rgb(0 0 0 / 0.5);
-  transform-origin: 50% 0;
-  transform: rotate(20deg);
-  transition: transform 0.15s ease;
-}
-
-.deck__menu .crackle__toggle[aria-pressed='true']::after {
-  transform: translateY(-15px) rotate(-20deg);
-  transform-origin: 50% 100%;
-}
-
-.deck__menu .crackle__toggle:focus-visible {
-  outline: 2px solid var(--focus);
-  outline-offset: 2px;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .deck__menu .crackle__toggle::after {
-    transition: none;
-  }
-}
-
-/* Faders: trilho afundado com escala, botão metálico retangular. */
-.deck__menu input[type='range'] {
-  appearance: none;
-  -webkit-appearance: none;
-  min-height: 24px;
-  background: repeating-linear-gradient(90deg, var(--menu-muted) 0 1px, transparent 1px 10%) 0 calc(50% + 9px) / 100% 4px no-repeat;
-  cursor: pointer;
-}
-
-.deck__menu input[type='range']::-webkit-slider-runnable-track {
-  height: 6px;
-  border-radius: 3px;
-  background: #0b0705;
-  box-shadow:
-    inset 0 1px 2px rgb(0 0 0 / 0.9),
-    0 1px 0 rgb(255 240 220 / 0.12);
-}
-
-.deck__menu input[type='range']::-moz-range-track {
-  height: 6px;
-  border-radius: 3px;
-  background: #0b0705;
-  box-shadow:
-    inset 0 1px 2px rgb(0 0 0 / 0.9),
-    0 1px 0 rgb(255 240 220 / 0.12);
-}
-
-.deck__menu input[type='range']::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 12px;
-  height: 22px;
-  margin-top: -8px;
-  border: 1px solid #111;
-  border-radius: 2px;
-  background:
-    linear-gradient(180deg, transparent 44%, #1a1a1a 44% 56%, transparent 56%),
-    linear-gradient(90deg, var(--metal-dark), var(--metal-highlight) 50%, var(--metal-dark));
-  box-shadow: 0 2px 3px rgb(0 0 0 / 0.6);
-}
-
-.deck__menu input[type='range']::-moz-range-thumb {
-  width: 12px;
-  height: 22px;
-  border: 1px solid #111;
-  border-radius: 2px;
-  background:
-    linear-gradient(180deg, transparent 44%, #1a1a1a 44% 56%, transparent 56%),
-    linear-gradient(90deg, var(--metal-dark), var(--metal-highlight) 50%, var(--metal-dark));
-  box-shadow: 0 2px 3px rgb(0 0 0 / 0.6);
-}
-
-.deck__menu input[type='range']:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.deck__menu input[type='range']:focus-visible {
-  outline: 2px solid var(--focus);
-  outline-offset: 2px;
-}
-
 @media (max-width: 767px) {
   .deck,
   .deck--collapsed {
@@ -1154,11 +620,8 @@ button {
 
 /* Áreas de toque ≥ 44px: no layout de celular e em qualquer tela de toque (ex.: tablet). */
 @media (max-width: 767px), (pointer: coarse) {
-  .theme-toggle,
   .shelf-toggle,
-  .carousel__arrow,
-  .play-overlay,
-  .album-search__fav {
+  .play-overlay {
     width: 44px;
     height: 44px;
   }
@@ -1169,19 +632,8 @@ button {
     padding: 0 10px;
   }
 
-  .deck__menu-toggle,
-  .deck__section-toggle,
-  .crackle__toggle,
-  .album-search__input {
+  .deck__menu-toggle {
     min-height: 44px;
-  }
-
-  input[type='range'] {
-    height: 44px;
-  }
-
-  .album-search__item {
-    min-height: 56px;
   }
 
   /* Link do rodapé: área de toque maior sem mudar o texto. */

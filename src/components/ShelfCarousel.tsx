@@ -1,5 +1,6 @@
 import { useRef, type PointerEvent, type ReactNode } from 'react';
 import type { Disc } from '../spotify/api';
+import { ChevronIcon, GridIcon } from './MenuIcons';
 
 interface ShelfCarouselProps {
   /** Discos a mostrar (já filtrados por etiqueta, se houver filtro). */
@@ -16,10 +17,15 @@ interface ShelfCarouselProps {
 
 // Arrastar mais que isso conta como rolagem, não como clique na capa.
 const DRAG_THRESHOLD = 5;
-// Capa (64px) + espaço: a seta anda pelo menos um disco.
-const MIN_STEP = 72;
+// Capa (76px) + espaço: a seta anda pelo menos um disco.
+const MIN_STEP = 86;
 
-// Estante compacta do menu: capas pequenas em fila, com setas, rolagem e arrastar.
+function countLabel(shown: number, total: number, filtered?: boolean): string {
+  if (filtered) return `${shown} de ${total} discos`;
+  return `${total} ${total === 1 ? 'disco' : 'discos'}`;
+}
+
+// Estante compacta do menu: título com contador e setas, chips, capas em fila (rolagem e arrastar) e "Abrir estante inteira".
 export function ShelfCarousel({ discs, total = discs.length, filter, filtered, selectedId, onSelect, onExpand }: ShelfCarouselProps) {
   const track = useRef<HTMLUListElement>(null);
   const drag = useRef<{ x: number; scroll: number; moved: boolean } | null>(null);
@@ -48,8 +54,25 @@ export function ShelfCarousel({ discs, total = discs.length, filter, filtered, s
     drag.current = null;
   }
 
+  const hasDiscs = discs.length > 0;
   return (
     <div className="carousel">
+      <div className="menu-section__head">
+        <h2 className="menu-section__title">Estante</h2>
+        <span className="menu-section__count" aria-live="polite">
+          {countLabel(discs.length, total, filtered)}
+        </span>
+        {hasDiscs && (
+          <span className="carousel__arrows">
+            <button type="button" className="round-button" aria-label="Discos anteriores" onClick={() => scrollByPage(-1)}>
+              <ChevronIcon direction="left" />
+            </button>
+            <button type="button" className="round-button" aria-label="Próximos discos" onClick={() => scrollByPage(1)}>
+              <ChevronIcon direction="right" />
+            </button>
+          </span>
+        )}
+      </div>
       {total > 0 && filter}
       {total === 0 ? (
         <p className="shelf__empty">Sua estante está vazia. Busque um disco e toque na ☆ para guardá-lo aqui.</p>
@@ -57,9 +80,6 @@ export function ShelfCarousel({ discs, total = discs.length, filter, filtered, s
         <p className="shelf__empty">Nenhum disco com essas etiquetas.</p>
       ) : (
         <div className="carousel__row">
-          <button type="button" className="carousel__arrow" aria-label="Discos anteriores" onClick={() => scrollByPage(-1)}>
-            ‹
-          </button>
           <ul
             ref={track}
             className="carousel__track"
@@ -95,13 +115,11 @@ export function ShelfCarousel({ discs, total = discs.length, filter, filtered, s
               </li>
             ))}
           </ul>
-          <button type="button" className="carousel__arrow" aria-label="Próximos discos" onClick={() => scrollByPage(1)}>
-            ›
-          </button>
         </div>
       )}
-      <button type="button" className="importer__open carousel__expand" onClick={onExpand}>
-        Expandir estante{total > 0 ? ` (${total})` : ''}
+      <button type="button" className="button button--wide" onClick={onExpand}>
+        <GridIcon />
+        Abrir estante inteira
       </button>
     </div>
   );

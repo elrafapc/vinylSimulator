@@ -24,7 +24,7 @@ describe('AlbumSearch', () => {
     render(<AlbumSearch onSelect={vi.fn()} />);
     await userEvent.type(screen.getByLabelText('Buscar álbum'), 'kind of blue');
     expect(await screen.findByText('Kind of Blue')).toBeInTheDocument();
-    expect(screen.getByText('Miles Davis')).toBeInTheDocument();
+    expect(screen.getByText('Miles Davis · álbum')).toBeInTheDocument();
     expect(searchDiscs).toHaveBeenLastCalledWith('kind of blue');
   });
 

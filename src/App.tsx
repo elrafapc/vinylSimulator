@@ -8,6 +8,8 @@ import { DiscDialog } from './components/DiscDialog';
 import { Footer } from './components/Footer';
 import { FullscreenToggle } from './components/FullscreenToggle';
 import { Logo } from './components/Logo';
+import { PanelIcon } from './components/MenuIcons';
+import './components/Menu.css';
 import { MiniPlayer } from './components/MiniPlayer';
 import { ThemeToggle } from './components/ThemeToggle';
 import { NowPlaying } from './components/NowPlaying';
@@ -33,6 +35,14 @@ import { next, pause, playDisc, prev, resume } from './spotify/player';
 // T42: o volume fica só no knob da vitrola. Para mostrar de novo o slider "Volume" no menu,
 // troque para true — o VolumeControl continua no código e usa o mesmo estado do knob (useVolume).
 const SHOW_VOLUME_SLIDER = false;
+
+// "Rafael Carneiro" → "RC"; um nome só → as duas primeiras letras.
+function initials(name: string): string {
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return '?';
+  const letters = words.length > 1 ? words[0][0] + words[words.length - 1][0] : words[0].slice(0, 2);
+  return letters.toUpperCase();
+}
 
 type AuthState = { status: 'loading' } | { status: 'out'; error?: string } | { status: 'in'; user: User };
 
@@ -143,8 +153,6 @@ function Deck({ user, onLogout }: DeckProps) {
   const [sheetOpen, setSheetOpen] = useState(false);
   const menuOpen = mobile ? sheetOpen : !collapsed;
   const [shelfOpen, setShelfOpen] = useState(false);
-  // Sons começa sempre recolhido (não guarda a escolha).
-  const [soundsOpen, setSoundsOpen] = useState(false);
   const closeShelf = useCallback(() => setShelfOpen(false), []);
   // Detalhes de um disco da estante (T40): guardo o id e leio da estante, para refletir etiquetas/remoção.
   const [detailId, setDetailId] = useState<string | null>(null);
@@ -293,15 +301,18 @@ function Deck({ user, onLogout }: DeckProps) {
           <h1 className="brand brand--small">
             <Logo variant={!mobile && collapsed ? 'mark' : 'full'} />
           </h1>
-          <button
-            type="button"
-            className="deck__menu-toggle"
-            aria-expanded={menuOpen}
-            aria-controls="deck-menu"
-            onClick={mobile ? () => setSheetOpen((open) => !open) : toggleSidebar}
-          >
-            {mobile || collapsed ? '☰ Menu' : 'Recolher menu ›'}
-          </button>
+          {/* Com o menu aberto no desktop, o "recolher" fica no cabeçalho do próprio menu (T57). */}
+          {(mobile || collapsed) && (
+            <button
+              type="button"
+              className="button deck__menu-toggle"
+              aria-expanded={menuOpen}
+              aria-controls="deck-menu"
+              onClick={mobile ? () => setSheetOpen((open) => !open) : toggleSidebar}
+            >
+              ☰ Menu
+            </button>
+          )}
         </header>
 
         {message && (
@@ -351,91 +362,102 @@ function Deck({ user, onLogout }: DeckProps) {
             </button>
           </div>
         )}
-        <div className="deck__user">
-          <span>{user.displayName}</span>
-          <button type="button" className="link" onClick={onLogout}>
-            Sair
-          </button>
+        <div className="menu-header">
+          {!mobile && (
+            <button
+              type="button"
+              className="icon-button"
+              aria-label="Recolher menu"
+              title="Recolher menu"
+              aria-expanded={menuOpen}
+              aria-controls="deck-menu"
+              onClick={toggleSidebar}
+            >
+              <PanelIcon />
+            </button>
+          )}
+          <span className="menu-header__user">
+            <span className="menu-header__avatar" aria-hidden>
+              {initials(user.displayName)}
+            </span>
+            <span className="menu-header__name">{user.displayName}</span>
+          </span>
           <FullscreenToggle />
           <ThemeToggle />
+          <button type="button" className="button menu-header__logout" onClick={onLogout}>
+            Sair
+          </button>
         </div>
 
-        {/* T55/T56: no desktop, música atual, player, ★ e faixas estão na tela do console. No celular a tela é
-            pequena demais para ler e tocar, então o menu continua com esses blocos. */}
-        {mobile && (
-          <>
-            <h2>Música atual</h2>
-            <NowPlaying nowPlaying={nowPlaying} fetchedAt={fetchedAt} />
+        <div className="menu-content">
+          {/* T55/T56: no desktop, música atual, player, ★ e faixas estão na tela do console. No celular a tela é
+              pequena demais para ler e tocar, então o menu continua com esses blocos. */}
+          {mobile && (
+            <>
+              <h2>Música atual</h2>
+              <NowPlaying nowPlaying={nowPlaying} fetchedAt={fetchedAt} />
 
-            <h2>Player</h2>
-            <div className="player-row">
-              <Controls
-                playing={playing}
-                disabled={busy || !canPlay}
-                onPlayPause={() => void togglePlay()}
-                onPrev={() => void run(prev, playing)}
-                onNext={() => void run(next, playing)}
+              <h2>Player</h2>
+              <div className="player-row">
+                <Controls
+                  playing={playing}
+                  disabled={busy || !canPlay}
+                  onPlayPause={() => void togglePlay()}
+                  onPrev={() => void run(prev, playing)}
+                  onNext={() => void run(next, playing)}
+                />
+                {shelfToggle()}
+              </div>
+            </>
+          )}
+
+          {SHOW_VOLUME_SLIDER && (
+            <>
+              <h2>Volume</h2>
+              <VolumeControl supported={nowPlaying?.supportsVolume} control={volume} />
+            </>
+          )}
+
+          {mobile && cover.uri && (
+            <>
+              <h2>Disco</h2>
+              <DiscDetails
+                key={cover.uri}
+                disc={{ uri: cover.uri, name: cover.name, imageUrl: cover.url }}
+                currentTrackId={nowPlaying?.trackId}
               />
-              {shelfToggle()}
-            </div>
-          </>
-        )}
+            </>
+          )}
 
-        {SHOW_VOLUME_SLIDER && (
-          <>
-            <h2>Volume</h2>
-            <VolumeControl supported={nowPlaying?.supportsVolume} control={volume} />
-          </>
-        )}
-
-        {mobile && cover.uri && (
-          <>
-            <h2>Disco</h2>
-            <DiscDetails
-              key={cover.uri}
-              disc={{ uri: cover.uri, name: cover.name, imageUrl: cover.url }}
-              currentTrackId={nowPlaying?.trackId}
+          <section className="menu-section">
+            <ShelfCarousel
+              discs={visibleDiscs}
+              total={favorites.length}
+              filter={tagFilterChips(true)}
+              filtered={filtered}
+              selectedId={selected?.id}
+              onSelect={(disc) => setDetailId(disc.id)}
+              onExpand={() => setShelfOpen(true)}
             />
-          </>
-        )}
+          </section>
 
-        <h2>Estante</h2>
-        <ShelfCarousel
-          discs={visibleDiscs}
-          total={favorites.length}
-          filter={tagFilterChips(true)}
-          filtered={filtered}
-          selectedId={selected?.id}
-          onSelect={(disc) => setDetailId(disc.id)}
-          onExpand={() => setShelfOpen(true)}
-        />
+          <section className="menu-section">
+            <h2 className="menu-section__title">Buscar discos</h2>
+            <AlbumSearch
+              selectedId={selected?.id}
+              playingId={playingId}
+              favoriteIds={favoriteIds}
+              onSelect={handleSelect}
+              onToggleFavorite={toggleFavorite}
+              onPlay={() => void togglePlay()}
+            />
+          </section>
 
-        <h2>Buscar discos</h2>
-        <AlbumSearch
-          selectedId={selected?.id}
-          playingId={playingId}
-          favoriteIds={favoriteIds}
-          onSelect={handleSelect}
-          onToggleFavorite={toggleFavorite}
-          onPlay={() => void togglePlay()}
-        />
+          <section className="menu-section">
+            <h2 className="menu-section__title">Importar do Spotify</h2>
+            <PlaylistImporter existingIds={favoriteIds} onImport={addMany} />
+          </section>
 
-        <h2>Importar do Spotify</h2>
-        <PlaylistImporter existingIds={favoriteIds} onImport={addMany} />
-
-        <h2>
-          <button
-            type="button"
-            className="deck__section-toggle"
-            aria-expanded={soundsOpen}
-            aria-controls="deck-sounds"
-            onClick={() => setSoundsOpen((open) => !open)}
-          >
-            Sons <span aria-hidden>{soundsOpen ? '▾' : '▸'}</span>
-          </button>
-        </h2>
-        {/* Recolhido só esconde: os sons continuam montados e tocando. */}
-        <div id="deck-sounds" hidden={!soundsOpen}>
           <AmbientSounds playing={playing} />
         </div>
       </aside>

@@ -1,0 +1,714 @@
+/* Menu lateral (T57): especificação em docs/design/MENU.md. Só tokens do tema (theme.css), nenhum hex aqui.
+   Fundo = fundo da página; separação do palco só pela borda de 1px à esquerda. */
+.deck__menu {
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-size: 14px;
+  color: var(--text);
+}
+
+/* ---------- Foco por teclado: anel na cor do fundo + 2px âmbar ---------- */
+.icon-button:focus-visible,
+.button:focus-visible,
+.round-button:focus-visible,
+.chip:focus-visible,
+.carousel__disc:focus-visible,
+.album-search__item:focus-visible,
+.album-search__fav:focus-visible,
+.sounds__toggle:focus-visible,
+.switch:focus-visible,
+.sound__volume:focus-visible,
+.importer__list input:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--bg),
+    0 0 0 4px var(--amber);
+}
+
+/* ---------- Cabeçalho ---------- */
+.menu-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--divider);
+}
+
+.menu-header__user {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.menu-header__avatar {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--surface-2);
+  color: var(--amber-text);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.menu-header__name {
+  overflow: hidden;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.menu-header .menu-header__logout {
+  height: 36px;
+  padding: 0 12px;
+}
+
+/* ---------- Botões ---------- */
+.icon-button,
+.round-button {
+  display: inline-grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.round-button {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: transparent;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font: 500 14px/1 Inter, ui-sans-serif, system-ui, sans-serif;
+  cursor: pointer;
+}
+
+.icon-button:hover,
+.round-button:hover,
+.button:hover:not(:disabled) {
+  border-color: var(--border-strong);
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.button--primary {
+  border-color: var(--amber);
+  background: var(--amber);
+  color: var(--on-amber);
+  font-weight: 600;
+}
+
+.button--primary:hover:not(:disabled) {
+  border-color: var(--amber-hover);
+  background: var(--amber-hover);
+  color: var(--on-amber);
+}
+
+.button--wide {
+  width: 100%;
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ---------- Seções ---------- */
+.menu-content {
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+}
+
+/* 28px entre seções, com linha de 1px. */
+.menu-content > * + * {
+  margin-top: 28px;
+  padding-top: 28px;
+  border-top: 1px solid var(--divider);
+}
+
+.menu-content > .sounds {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.menu-section__head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.menu-section__title {
+  margin: 0 0 14px;
+  color: var(--text);
+  font: 600 20px/1.2 Lora, Georgia, serif;
+}
+
+.menu-section__head .menu-section__title {
+  margin: 0;
+}
+
+.menu-section__count {
+  color: var(--text-3);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.menu-section__lead {
+  margin: -10px 0 14px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* ---------- Chips de etiqueta (menu e estante expandida) ---------- */
+.chip {
+  height: 30px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--muted);
+  font: 500 12px/1 Inter, ui-sans-serif, system-ui, sans-serif;
+  cursor: pointer;
+}
+
+.chip:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.chip[aria-pressed='true'] {
+  border-color: var(--amber-text);
+  background: var(--chip-active-bg);
+  color: var(--amber-text);
+}
+
+.chip--dashed {
+  border-style: dashed;
+  background: transparent;
+}
+
+/* ---------- Estante (carrossel) ---------- */
+.carousel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.carousel__arrows {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+  align-self: center;
+}
+
+/* Degradê no fim do carrossel, sumindo no fundo. */
+.carousel__row {
+  position: relative;
+}
+
+.carousel__row::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 40px;
+  background: linear-gradient(to right, transparent, var(--bg));
+  pointer-events: none;
+}
+
+.carousel__track {
+  display: flex;
+  gap: 10px;
+  margin: 0;
+  /* Espaço para o anel do disco atual e a sombra não serem cortados. */
+  padding: 4px 40px 8px 4px;
+  list-style: none;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+  cursor: grab;
+  user-select: none;
+}
+
+.carousel__track::-webkit-scrollbar {
+  display: none;
+}
+
+.carousel__track li {
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+}
+
+.carousel__disc {
+  display: block;
+  width: 76px;
+  height: 76px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: var(--surface-2);
+  box-shadow: 0 2px 6px var(--shadow-soft);
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.carousel__disc:hover {
+  transform: translateY(-2px);
+}
+
+.carousel__disc img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+/* Disco atual: anel âmbar de 2px, afastado 2px. */
+.carousel__disc--selected {
+  box-shadow:
+    0 0 0 2px var(--bg),
+    0 0 0 4px var(--amber);
+}
+
+.carousel__spine {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 4px;
+  color: var(--muted);
+  font-size: 11px;
+  text-align: center;
+  overflow: hidden;
+}
+
+/* ---------- Campo (busca e filtro do importador) ---------- */
+.field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text-3);
+}
+
+.field:focus-within {
+  border-color: var(--amber);
+  box-shadow: 0 0 0 3px var(--amber-halo);
+  color: var(--amber);
+}
+
+.field__input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: 500 14px Inter, ui-sans-serif, system-ui, sans-serif;
+  /* O anel de foco é a borda âmbar + halo do .field. */
+  outline: none;
+}
+
+.field__input::placeholder {
+  color: var(--text-3);
+  font-weight: 400;
+}
+
+/* ---------- Busca: resultados ---------- */
+.album-search__status {
+  margin: 12px 0 0;
+  color: var(--text-3);
+  font-size: 13px;
+}
+
+.album-search__status--error {
+  color: var(--danger);
+}
+
+.album-search__list {
+  max-height: 60vh;
+  margin: 12px 0 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+  border-radius: 8px;
+}
+
+.album-search__list:not(:empty) {
+  border: 1px solid var(--border);
+}
+
+.album-search__row {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.album-search__row + .album-search__row {
+  border-top: 1px solid var(--divider);
+}
+
+.album-search__item {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.album-search__item:hover {
+  background: var(--surface-2);
+}
+
+.album-search__item--selected {
+  background: var(--chip-active-bg);
+}
+
+.album-search__item img,
+.album-search__nocover {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 4px;
+  background: var(--surface-2);
+  object-fit: cover;
+}
+
+.album-search__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.album-search__text strong,
+.album-search__text span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.album-search__text strong {
+  font-weight: 500;
+}
+
+.album-search__text span {
+  color: var(--text-3);
+  font-size: 12px;
+}
+
+.album-search__row .play-overlay {
+  left: 12px;
+  top: 50%;
+  width: 40px;
+  height: 40px;
+  transform: translateY(-50%);
+}
+
+.album-search__fav {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  margin-right: 6px;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--text-3);
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.album-search__fav:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.album-search__fav[aria-pressed='true'] {
+  color: var(--amber-text);
+}
+
+/* ---------- Importar do Spotify ---------- */
+.importer--open {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.importer__list {
+  max-height: 240px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.importer__list li + li {
+  border-top: 1px solid var(--divider);
+}
+
+.importer__list label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 0 12px;
+  cursor: pointer;
+}
+
+.importer__list label:hover {
+  background: var(--surface-2);
+}
+
+.importer__list input {
+  accent-color: var(--amber);
+}
+
+.importer__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.importer__actions .button {
+  flex: 1;
+}
+
+.importer__note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.importer__error {
+  margin: 10px 0 0;
+  color: var(--danger);
+  font-size: 13px;
+}
+
+/* ---------- Sons ambiente ---------- */
+.sounds {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.sounds__heading {
+  margin: 0;
+  font: inherit;
+}
+
+.sounds__toggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 52px;
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--muted);
+  text-align: left;
+  cursor: pointer;
+}
+
+.sounds__toggle:hover {
+  background: var(--surface-2);
+}
+
+.sounds__icon {
+  display: grid;
+  color: var(--amber);
+}
+
+.sounds__text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.sounds__title {
+  color: var(--text);
+  font: 600 15px/1.2 Lora, Georgia, serif;
+}
+
+.sounds__summary {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sounds__body {
+  border-top: 1px solid var(--divider);
+}
+
+/* Uma linha por som: nome (96px) + interruptor + volume. */
+.sound {
+  display: grid;
+  grid-template-columns: 96px 40px minmax(0, 1fr);
+  align-items: center;
+  gap: 16px;
+  min-height: 52px;
+  padding: 0 16px;
+}
+
+.sound + .sound {
+  border-top: 1px solid var(--divider);
+}
+
+.sound__name {
+  color: var(--text);
+}
+
+/* Desligado: nome e volume esmaecidos (o volume fica guardado). */
+.sound--off .sound__name {
+  color: var(--text-3);
+}
+
+.switch {
+  position: relative;
+  width: 40px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--surface-2);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.switch__thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--text-3);
+  transition: transform 0.15s ease;
+}
+
+.switch[aria-checked='true'] {
+  border-color: var(--amber);
+  background: var(--amber);
+}
+
+.switch[aria-checked='true'] .switch__thumb {
+  background: var(--on-amber);
+  transform: translateX(16px);
+}
+
+/* Volume: trilho de 4px, preenchimento âmbar quando ligado (--fill vem do SoundControl). */
+.sound__volume {
+  --fill-color: var(--amber);
+  width: 100%;
+  height: 24px;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.sound--off .sound__volume {
+  --fill-color: var(--text-3);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.sound__volume::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(to right, var(--fill-color) var(--fill, 0%), var(--border) var(--fill, 0%));
+}
+
+.sound__volume::-moz-range-track {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--border);
+}
+
+.sound__volume::-moz-range-progress {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--fill-color);
+}
+
+.sound__volume::-webkit-slider-thumb {
+  width: 16px;
+  height: 16px;
+  margin-top: -6px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--text);
+  -webkit-appearance: none;
+}
+
+.sound__volume::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--text);
+}
+
+.sound--off .sound__volume::-webkit-slider-thumb {
+  background: var(--text-3);
+}
+
+.sound--off .sound__volume::-moz-range-thumb {
+  background: var(--text-3);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .switch,
+  .switch__thumb,
+  .carousel__disc {
+    transition: none;
+  }
+}

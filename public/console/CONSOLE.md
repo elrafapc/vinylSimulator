@@ -50,10 +50,10 @@ Detalhes:
 - Capa: quadrada, encostada à esquerda da janela (altura total da janela); vinil (record.webp pequeno) saindo por trás à direita, cortado pela janela.
 - Ícones dos botões: SVG simples em âmbar, centralizados (anterior/próxima ~40% do diâmetro do botão; play/pause ~45%). Estado pressionado: brightness(0.85), sem mudar o desenho.
 - Knob: knob-cap.webp gira de -135° (0%) a +135° (100%); arrastar, scroll e setas; mesmo debounce do volume.
-- Lista: 12 linhas visíveis (altura de linha = 2.13% da altura da base ≈ 28.4px); rolagem interna se houver mais; colunas: ▶ da faixa atual, número (alinhado à direita), título, duração (alinhada à direita); separador 1px rgba(255,255,255,0.06).
+- Lista: 12 linhas visíveis (altura de linha = 2.13% da altura da base ≈ 28.4px); rolagem interna se houver mais; colunas: ▶ da faixa atual, número (alinhado à direita), título, duração (alinhada à direita); separador 1px rgba(255,255,255,0.12) (mais visível, como no design).
 - Fontes: serifada para faixa e lista (ex.: Lora/Libre Baskerville, hospedada localmente); tempos em sans pequena.
 - Tamanhos de fonte em unidades do contêiner (cqw) para escalar com o console: faixa ≈ 1.05cqw, artista ≈ 0.85cqw, álbum ≈ 0.62cqw, lista ≈ 0.80cqw, tempos ≈ 0.68cqw (cqw = 1% da largura do console).
-- Cores (amostradas do design): faixa #EBDCC5 · artista #B2A591 · álbum #837A6C · tempos #A59B87 · lista #9B8F7E · duração na lista #8A7F70 · faixa atual e progresso (âmbar) #D89257 · fundo dos painéis #13100D.
+- Cores (amostradas do design): faixa #EBDCC5 · artista #B2A591 · álbum #837A6C · tempos #A59B87 · lista #C8BCA8 · duração na lista #A99D8A (mais claras, como no design) · faixa atual e progresso (âmbar) #D89257 · fundo dos painéis #13100D.
 
 
 ## Fundo da página

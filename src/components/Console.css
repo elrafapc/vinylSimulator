@@ -1,15 +1,7 @@
 /* Tela do console (T55): os painéis, a moldura da capa e o corpo dos botões já estão na foto (console-base.webp).
    Aqui só o conteúdo, em % da base (public/console/CONSOLE.md); textos em cqw (1% da largura do console). */
 .console-screen {
-  --screen-track: #ebdcc5;
-  --screen-artist: #b2a591;
-  --screen-album: #837a6c;
-  --screen-times: #a59b87;
-  --screen-list: #9b8f7e;
-  --screen-duration: #8a7f70;
-  --screen-amber: #d89257;
-  --screen-panel: #13100d;
-
+  /* Cores em --screen-* no theme.css. */
   position: absolute;
   inset: 0;
   /* A camada cobre o console todo só para posicionar; o braço e a gaveta continuam clicáveis. */
@@ -111,7 +103,7 @@
   height: 100%;
   border-radius: inherit;
   background: var(--screen-amber);
-  box-shadow: 0 0 4px rgb(216 146 87 / 0.5);
+  box-shadow: 0 0 4px var(--screen-amber-glow);
 }
 
 .console-screen__times {
@@ -216,7 +208,7 @@
 }
 
 .console-screen__button svg {
-  filter: drop-shadow(0 0 3px rgb(216 146 87 / 0.35));
+  filter: drop-shadow(0 0 3px var(--screen-amber-glow));
 }
 
 /* Pressionado: escurece, sem mudar o desenho. */
@@ -299,7 +291,7 @@
 
 .console-screen__row {
   height: 1.697cqw;
-  border-bottom: 1px solid rgb(255 255 255 / 0.06);
+  border-bottom: 1px solid rgb(255 255 255 / 0.12);
 }
 
 /* A linha inteira é o botão: clicar toca o disco a partir dessa faixa. */

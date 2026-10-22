@@ -144,7 +144,9 @@ describe('App', () => {
 
   it('T18: menu lateral recolhe e expande, e o estado persiste', async () => {
     const { unmount } = render(<App />);
-    const toggle = await screen.findByRole('button', { name: 'Recolher menu ›' });
+    const toggle = await screen.findByRole('button', { name: 'Recolher menu' });
+    // Menu aberto: o "☰ Menu" do palco some (o recolher fica no cabeçalho do menu, T57).
+    expect(screen.queryByRole('button', { name: '☰ Menu' })).not.toBeInTheDocument();
     expect(screen.getByRole('complementary', { name: 'Menu' })).toBeVisible();
     expect(screen.getByRole('img', { name: 'Vinyl Player Simulator' })).toHaveClass('logo--full');
     await userEvent.click(toggle);
@@ -163,7 +165,7 @@ describe('App', () => {
   it('T19/T40: clicar num disco da estante expandida abre os detalhes por cima, sem fechar a estante', async () => {
     localStorage.setItem('vinil.favorites', JSON.stringify([kindOfBlue]));
     render(<App />);
-    await userEvent.click(await screen.findByRole('button', { name: 'Expandir estante (1)' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Abrir estante inteira' }));
     await userEvent.click(within(screen.getByRole('dialog', { name: /^Estante/ })).getByRole('button', { name: 'Abrir Kind of Blue' }));
     expect(screen.getByRole('dialog', { name: 'Detalhes de Kind of Blue' })).toBeInTheDocument();
     expect(screen.getByRole('dialog', { name: /^Estante/ })).toBeInTheDocument();
@@ -198,11 +200,13 @@ describe('App', () => {
     const menu = screen.getByRole('complementary', { name: 'Menu' });
     expect(within(menu).queryByText(/Tocando em/)).not.toBeInTheDocument();
     expect(within(menu).queryByRole('button', { name: 'Pausar' })).not.toBeInTheDocument();
-    expect(within(menu).getAllByRole('heading', { level: 2 }).map((h) => h.textContent?.replace(/[▸▾]/g, '').trim())).toEqual([
+    // Título do bloco Sons sem o resumo do estado que vem junto no botão.
+    const title = (h: HTMLElement) => (h.querySelector('.sounds__title') ?? h).textContent;
+    expect(within(menu).getAllByRole('heading', { level: 2 }).map(title)).toEqual([
       'Estante',
       'Buscar discos',
       'Importar do Spotify',
-      'Sons',
+      'Sons ambiente',
     ]);
   });
 
@@ -228,13 +232,14 @@ describe('App', () => {
 
   it('T32: Sons começa recolhido e abre ao clicar, sem desmontar os controles', async () => {
     render(<App />);
-    const toggle = await screen.findByRole('button', { name: /Sons/ });
+    const toggle = await screen.findByRole('button', { name: /Sons ambiente/ });
     expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    expect(toggle).toHaveTextContent('Chiado ligado · chuva e lareira desligadas');
     // Escondido, mas na página (o som continua tocando).
-    expect(screen.getByRole('button', { name: 'Chiado ligado', hidden: true })).not.toBeVisible();
+    expect(screen.getByRole('switch', { name: 'Chiado', hidden: true })).not.toBeVisible();
     await userEvent.click(toggle);
     expect(toggle).toHaveAttribute('aria-expanded', 'true');
-    expect(screen.getByRole('button', { name: 'Chiado ligado' })).toBeVisible();
+    expect(screen.getByRole('switch', { name: 'Chiado' })).toBeVisible();
   });
 
   it('T33: ★ ao lado do player guarda e tira da estante o álbum que está tocando', async () => {
@@ -242,7 +247,7 @@ describe('App', () => {
     render(<App />);
     await userEvent.click(await screen.findByRole('button', { name: 'Guardar Kind of Blue na estante' }));
     expect(screen.getByRole('button', { name: 'Tirar Kind of Blue da estante' })).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getByRole('button', { name: 'Expandir estante (1)' })).toBeInTheDocument();
+    expect(screen.getByText('1 disco')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Tirar Kind of Blue da estante' }));
     expect(screen.getByText(/Sua estante está vazia/)).toBeInTheDocument();
   });
@@ -253,7 +258,7 @@ describe('App', () => {
     render(<App />);
     await userEvent.click(await screen.findByRole('button', { name: 'Guardar Playlist na estante' }));
     expect(getPlaylistDisc).toHaveBeenCalledWith('p9');
-    expect(await screen.findByRole('button', { name: 'Expandir estante (1)' })).toBeInTheDocument();
+    expect(await screen.findByText('1 disco')).toBeInTheDocument();
     expect(JSON.parse(localStorage.getItem('vinil.library') ?? '{}').discs[0]).toMatchObject({ name: 'Jazz da Ana' });
   });
 
@@ -359,6 +364,16 @@ describe('App', () => {
     expect(knob).not.toHaveAttribute('aria-disabled');
   });
 
+  it('T57: cabeçalho do menu com avatar (iniciais), nome, tela cheia, tema e Sair', async () => {
+    render(<App />);
+    const menu = await screen.findByRole('complementary', { name: 'Menu' });
+    expect(await within(menu).findByText('Rafael')).toBeInTheDocument();
+    expect(within(menu).getByText('RA')).toBeInTheDocument();
+    expect(within(menu).getByRole('button', { name: 'Recolher menu' })).toBeInTheDocument();
+    expect(within(menu).getByRole('button', { name: /tema/ })).toBeInTheDocument();
+    expect(within(menu).getByRole('button', { name: 'Sair' })).toBeInTheDocument();
+  });
+
   it('T44: filtro por etiquetas na estante, igual no carrossel; com filtro o arrastar desliga', async () => {
     const d = (id: string, name: string, tags: string[]) => ({ id, uri: `spotify:album:${id}`, kind: 'album', name, artist: 'X', tags });
     localStorage.setItem(
@@ -366,7 +381,7 @@ describe('App', () => {
       JSON.stringify({ version: 3, discs: [d('a1', 'Kind of Blue', ['Jazz', 'Modal']), d('a2', 'Blue Train', ['Jazz']), d('a3', 'Nevermind', [])] }),
     );
     render(<App />);
-    await userEvent.click(await screen.findByRole('button', { name: 'Expandir estante (3)' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Abrir estante inteira' }));
     const panel = screen.getByRole('dialog', { name: /^Estante/ });
     expect(within(panel).getAllByRole('button', { pressed: false }).map((b) => b.textContent)).toEqual(
       expect.arrayContaining(['Jazz', 'Modal', 'Sem etiqueta']),
