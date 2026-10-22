@@ -12,11 +12,19 @@
   src: url('/fonts/VT323-Regular.ttf') format('truetype');
   font-display: swap;
 }
+
+/* Tela do console (T55): Lora variável (400–500), só o subconjunto latino (cobre os acentos do português). */
+@font-face {
+  font-family: 'Lora';
+  src: url('/fonts/Lora-Variable-latin.woff2') format('woff2');
+  font-weight: 400 500;
+  font-display: swap;
+}
 :root,
 :root[data-theme='dark'] {
   color-scheme: dark;
-  --bg: #17120f;
-  --bg-glow: #2a201a;
+  /* Fundo liso da página inteira (palco e menu): a base do console é recortada, sem mesa. */
+  --bg: #14100d;
   --panel: #211a16;
   --text: #f1e6d8;
   --muted: #a8998a;
@@ -37,6 +45,7 @@
   --shadow: rgb(0 0 0 / 0.55);
   /* A foto da vitrola é a mesma nos dois temas; no escuro, um pouco mais apagada. */
   --turntable-filter: brightness(0.9);
+  --console-shadow: rgb(0 0 0 / 0.55);
   --shadow-soft: rgb(0 0 0 / 0.4);
 
   --shelf-back: #1a1411;
@@ -107,8 +116,7 @@
 
 :root[data-theme='light'] {
   color-scheme: light;
-  --bg: #f4ece1;
-  --bg-glow: #fffaf3;
+  --bg: #ece6dc;
   --panel: #fbf6ef;
   --text: #2b211a;
   --muted: #7a6b5d;
@@ -127,6 +135,7 @@
 
   --shadow: rgb(60 40 20 / 0.32);
   --turntable-filter: none;
+  --console-shadow: rgb(0 0 0 / 0.3);
   --shadow-soft: rgb(60 40 20 / 0.22);
 
   --shelf-back: #ece2d4;

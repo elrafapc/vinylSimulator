@@ -1,0 +1,401 @@
+/* Tela do console (T55): os painéis, a moldura da capa e o corpo dos botões já estão na foto (console-base.webp).
+   Aqui só o conteúdo, em % da base (public/console/CONSOLE.md); textos em cqw (1% da largura do console). */
+.console-screen {
+  --screen-track: #ebdcc5;
+  --screen-artist: #b2a591;
+  --screen-album: #837a6c;
+  --screen-times: #a59b87;
+  --screen-list: #9b8f7e;
+  --screen-duration: #8a7f70;
+  --screen-amber: #d89257;
+  --screen-panel: #13100d;
+
+  position: absolute;
+  inset: 0;
+  /* A camada cobre o console todo só para posicionar; o braço e a gaveta continuam clicáveis. */
+  pointer-events: none;
+  font-family: Lora, Georgia, 'Times New Roman', serif;
+}
+
+.console-screen > * {
+  pointer-events: auto;
+}
+
+.console-screen p {
+  margin: 0;
+}
+
+/* Janela do passe-partout: capa encostada à esquerda, vinil saindo por trás à direita, cortado pela janela. */
+.console-screen__window {
+  position: absolute;
+  left: 68.14%;
+  top: 19.15%;
+  width: 8.19%;
+  height: 10.64%;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.console-screen__cover,
+.console-screen__vinyl {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  aspect-ratio: 1;
+}
+
+.console-screen__cover {
+  left: 0;
+  z-index: 1;
+  display: block;
+  object-fit: cover;
+  background: var(--screen-panel);
+  box-shadow: 2px 0 4px rgb(0 0 0 / 0.45);
+}
+
+.console-screen__vinyl {
+  right: 0;
+  border-radius: 50%;
+  background: center / cover no-repeat;
+}
+
+.console-screen__info {
+  position: absolute;
+  left: 79.02%;
+  top: 16.17%;
+  /* 16,02% da base menos o canto da ★. */
+  width: 14.6%;
+  height: 7.45%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25cqw;
+  overflow: hidden;
+}
+
+.console-screen__info p {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.console-screen__track {
+  color: var(--screen-track);
+  font-size: 1.05cqw;
+  font-weight: 500;
+}
+
+.console-screen__artist {
+  color: var(--screen-artist);
+  font-size: 0.85cqw;
+}
+
+.console-screen__album {
+  color: var(--screen-album);
+  font-size: 0.62cqw;
+}
+
+.console-screen__progress {
+  position: absolute;
+  left: 79.14%;
+  top: 24.79%;
+  width: 15.66%;
+  height: 0.43%;
+  border-radius: 1px;
+  background: rgb(255 255 255 / 0.12);
+  pointer-events: none;
+}
+
+.console-screen__progress-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--screen-amber);
+  box-shadow: 0 0 4px rgb(216 146 87 / 0.5);
+}
+
+.console-screen__times {
+  position: absolute;
+  left: 79.14%;
+  top: 25.85%;
+  width: 15.66%;
+  height: 1.49%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--screen-times);
+  font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-size: 0.68cqw;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+  pointer-events: none;
+}
+
+/* Estrela de estante: discreta, no canto superior direito do bloco de texto. */
+.console-screen__star {
+  position: absolute;
+  left: 95.04%;
+  top: 17.6%;
+  width: 1.5%;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--screen-album);
+  font-size: 0.95cqw;
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+}
+
+.console-screen__star:hover:not(:disabled),
+.console-screen__star[aria-pressed='true'] {
+  color: var(--screen-amber);
+}
+
+.console-screen__star:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.console-screen__star:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* "Tocando em": linha pequena abaixo dos botões, alinhada à barra de progresso. */
+.console-screen__device {
+  position: absolute;
+  left: 79.14%;
+  top: 35.4%;
+  width: 12.5%;
+  overflow: hidden;
+  color: var(--screen-album);
+  font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-size: 0.6cqw;
+  letter-spacing: 0.04em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* Botões: só a área clicável e o ícone; o corpo do botão é o da foto. */
+.console-screen__button {
+  position: absolute;
+  top: 32.13%;
+  width: 2.63%;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--screen-amber);
+  /* Anterior/próxima: ícone ≈ 40% do diâmetro. */
+  font-size: 1.05cqw;
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+}
+
+.console-screen__button--prev {
+  left: 81.05%;
+}
+
+.console-screen__button--main {
+  left: 84.94%;
+  width: 3.47%;
+  /* Play/pause: ≈ 45% do diâmetro. */
+  font-size: 1.56cqw;
+}
+
+.console-screen__button--next {
+  left: 88.52%;
+}
+
+.console-screen__button svg {
+  filter: drop-shadow(0 0 3px rgb(216 146 87 / 0.35));
+}
+
+/* Pressionado: escurece, sem mudar o desenho. */
+.console-screen__button:active:not(:disabled) {
+  background: rgb(0 0 0 / 0.18);
+  filter: brightness(0.85);
+}
+
+.console-screen__button:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.console-screen__button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Volume: knob-cap.webp gira de -135° (0%) a +135° (100%) sobre o anel de LEDs da foto. */
+.console-screen .knob {
+  position: absolute;
+  left: 93.07%;
+  top: 32.02%;
+  width: 2.99%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  cursor: grab;
+  touch-action: none;
+}
+
+.console-screen .knob:active {
+  cursor: grabbing;
+}
+
+.console-screen .knob[aria-disabled='true'] {
+  cursor: not-allowed;
+}
+
+.console-screen .knob:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+}
+
+.knob__cap {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: url('/console/knob-cap.webp') center / cover no-repeat;
+  transition: transform 0.12s ease-out;
+}
+
+/* Lista de faixas: 12 linhas visíveis (linha = 2,13% da altura da base), rolagem interna se houver mais. */
+.console-screen__list {
+  position: absolute;
+  left: 66.35%;
+  top: 40.85%;
+  width: 28.69%;
+  height: 35.96%;
+  display: flex;
+  flex-direction: column;
+  color: var(--screen-list);
+  font-size: 0.8cqw;
+}
+
+.console-screen__note {
+  padding: 0.6cqw 1.4cqw;
+  font-style: italic;
+}
+
+.console-screen__tracks {
+  flex: 1;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+  scrollbar-width: thin;
+  scrollbar-color: rgb(255 255 255 / 0.15) transparent;
+}
+
+.console-screen__row {
+  height: 1.697cqw;
+  border-bottom: 1px solid rgb(255 255 255 / 0.06);
+}
+
+/* A linha inteira é o botão: clicar toca o disco a partir dessa faixa. */
+.console-screen__row-button {
+  display: grid;
+  grid-template-columns: 1.2cqw 1.7cqw minmax(0, 1fr) auto;
+  gap: 0 1cqw;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  padding: 0 1.2cqw 0 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.console-screen__row-button:hover:not(:disabled) {
+  background: rgb(255 255 255 / 0.04);
+  color: var(--screen-track);
+}
+
+.console-screen__row-button:focus-visible {
+  outline: 1px solid var(--focus);
+  outline-offset: -1px;
+}
+
+.console-screen__row-button:disabled {
+  cursor: default;
+}
+
+.console-screen__marker {
+  color: var(--screen-amber);
+  font-size: 0.7cqw;
+  text-align: center;
+}
+
+.console-screen__num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.console-screen__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.console-screen__time {
+  color: var(--screen-duration);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.console-screen__row--current,
+.console-screen__row--current .console-screen__time {
+  color: var(--screen-amber);
+}
+
+/* Gaveta de discos da foto: abre a estante. */
+.console__drawer {
+  position: absolute;
+  left: 6.87%;
+  top: 78.51%;
+  width: 54.99%;
+  height: 12.77%;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.console__drawer:hover {
+  background: rgb(255 214 160 / 0.06);
+}
+
+.console__drawer:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .knob__cap {
+    transition: none;
+  }
+}
+
+@media (max-width: 767px) {
+  /* O knob fica com ~11px no celular (lá os botões do player ficam no menu): área de toque invisível de ~44px em volta. */
+  .console-screen .knob::before {
+    content: '';
+    position: absolute;
+    inset: -16px;
+    border-radius: 50%;
+  }
+}

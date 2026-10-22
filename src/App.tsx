@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { AlbumSearch } from './components/AlbumSearch';
 import { AmbientSounds } from './components/AmbientSounds';
+import { Console } from './components/Console';
 import { Controls } from './components/Controls';
 import { DiscDetails } from './components/DiscDetails';
 import { DiscDialog } from './components/DiscDialog';
@@ -15,7 +16,6 @@ import { ShelfCarousel } from './components/ShelfCarousel';
 import { ShelfPanel } from './components/ShelfPanel';
 import { ShelfToggle } from './components/ShelfToggle';
 import { TagFilter } from './components/TagFilter';
-import { Turntable } from './components/Turntable';
 import { VolumeControl } from './components/VolumeControl';
 import { useFavorites } from './hooks/useFavorites';
 import { MOBILE_QUERY, useMediaQuery } from './hooks/useMediaQuery';
@@ -25,7 +25,7 @@ import { useSidebar } from './hooks/useSidebar';
 import { useVolume } from './hooks/useVolume';
 import { completeDisc, currentDisc } from './library/currentDisc';
 import { tagKey } from './library/favorites';
-import { getMe, type Disc, type User } from './spotify/api';
+import { getMe, parseDiscUri, type Disc, type Track, type User } from './spotify/api';
 import { CLIENT_ID, handleCallback, isLoggedIn, login, logout } from './spotify/auth';
 import { errorMessage, SpotifyError } from './spotify/errors';
 import { next, pause, playDisc, prev, resume } from './spotify/player';
@@ -184,12 +184,21 @@ function Deck({ user, onLogout }: DeckProps) {
   // Se outro disco está tocando (ex.: trocado no app do Spotify), o toca-discos mostra ele.
   const showPlaying = nowPlaying && (!selected || (playing && nowPlaying.contextUri !== selected.uri));
   const cover = showPlaying
-    ? { url: nowPlaying.imageUrl, name: nowPlaying.albumName, uri: nowPlaying.contextUri ?? nowPlaying.albumUri }
-    : { url: selected?.imageUrl, name: selected?.name, uri: selected?.uri };
+    ? { url: nowPlaying.imageUrl, name: nowPlaying.albumName, artist: nowPlaying.artist, uri: nowPlaying.contextUri ?? nowPlaying.albumUri }
+    : { url: selected?.imageUrl, name: selected?.name, artist: selected?.artist, uri: selected?.uri };
   const playingId = playing && selected && nowPlaying?.contextUri === selected.uri ? selected.id : undefined;
   // Disco que o botão ★ guarda/tira: o que está tocando (mesmo se escolhido no app do Spotify).
   const discNow = currentDisc(nowPlaying, selected);
   const [savingDisc, setSavingDisc] = useState(false);
+  const shelfToggle = (className?: string) => (
+    <ShelfToggle
+      className={className}
+      disc={discNow}
+      onShelf={discNow ? favoriteIds.has(discNow.id) : false}
+      busy={savingDisc}
+      onToggle={() => void toggleCurrentOnShelf()}
+    />
+  );
 
   async function toggleCurrentOnShelf() {
     if (!discNow) return;
@@ -202,7 +211,7 @@ function Deck({ user, onLogout }: DeckProps) {
     }
   }
 
-  async function run(action: () => Promise<void>, nextPlaying: boolean, disc?: Disc) {
+  async function run(action: () => Promise<void>, nextPlaying: boolean, disc?: Disc, track?: Track) {
     setBusy(true);
     try {
       await action();
@@ -211,13 +220,14 @@ function Deck({ user, onLogout }: DeckProps) {
         if (disc) {
           return {
             isPlaying: true,
-            trackName: '',
-            artist: disc.artist,
+            trackId: track?.id,
+            trackName: track?.name ?? '',
+            artist: track?.artist ?? disc.artist,
             albumName: disc.name,
             contextUri: disc.uri,
             imageUrl: disc.imageUrl,
             progressMs: 0,
-            durationMs: 0,
+            durationMs: track?.durationMs ?? 0,
             deviceName: prev?.deviceName,
             volumePercent: prev?.volumePercent,
             supportsVolume: prev?.supportsVolume,
@@ -251,6 +261,17 @@ function Deck({ user, onLogout }: DeckProps) {
       return;
     }
     void run(() => playDisc(disc.uri, nowPlaying?.deviceId), true, disc);
+  }
+
+  // Clique numa faixa da lista do console (T56): toca o disco do prato a partir dela, em ordem.
+  function playFromTrack(track: Track) {
+    const ref = parseDiscUri(cover.uri);
+    if (!cover.uri || !ref) return;
+    const disc: Disc =
+      selected?.uri === cover.uri
+        ? selected
+        : { ...ref, uri: cover.uri, name: cover.name ?? '', artist: cover.artist ?? '', imageUrl: cover.url };
+    void run(() => playDisc(disc.uri, nowPlaying?.deviceId, `spotify:track:${track.id}`), true, disc, track);
   }
 
   // Trocar de disco exige levantar a agulha primeiro, como numa vitrola de verdade.
@@ -289,16 +310,24 @@ function Deck({ user, onLogout }: DeckProps) {
           </p>
         )}
 
-        <Turntable
+        <Console
+          nowPlaying={nowPlaying}
+          fetchedAt={fetchedAt}
+          disc={{ uri: cover.uri, name: cover.name, artist: cover.artist, imageUrl: cover.url }}
           playing={playing}
-          coverUrl={cover.url}
-          albumName={cover.name}
           disabled={busy || !canPlay}
           onNeedleClick={() => void togglePlay()}
+          onPlayPause={() => void togglePlay()}
+          onPrev={() => void run(prev, playing)}
+          onNext={() => void run(next, playing)}
           volume={volume.value}
           volumeDisabled={!nowPlaying?.supportsVolume}
           onVolumeChange={volume.change}
           onVolumeCommit={volume.commit}
+          onPlayTrack={playFromTrack}
+          shelfToggle={mobile ? undefined : shelfToggle('console-screen__star')}
+          onOpenDrawer={() => setShelfOpen(true)}
+          compact={mobile}
         />
         {!canPlay && <p className="hint">Escolha um disco na estante e baixe a agulha.</p>}
         <Footer />
@@ -331,25 +360,26 @@ function Deck({ user, onLogout }: DeckProps) {
           <ThemeToggle />
         </div>
 
-        <h2>Música atual</h2>
-        <NowPlaying nowPlaying={nowPlaying} fetchedAt={fetchedAt} />
+        {/* T55/T56: no desktop, música atual, player, ★ e faixas estão na tela do console. No celular a tela é
+            pequena demais para ler e tocar, então o menu continua com esses blocos. */}
+        {mobile && (
+          <>
+            <h2>Música atual</h2>
+            <NowPlaying nowPlaying={nowPlaying} fetchedAt={fetchedAt} />
 
-        <h2>Player</h2>
-        <div className="player-row">
-          <Controls
-            playing={playing}
-            disabled={busy || !canPlay}
-            onPlayPause={() => void togglePlay()}
-            onPrev={() => void run(prev, playing)}
-            onNext={() => void run(next, playing)}
-          />
-          <ShelfToggle
-            disc={discNow}
-            onShelf={discNow ? favoriteIds.has(discNow.id) : false}
-            busy={savingDisc}
-            onToggle={() => void toggleCurrentOnShelf()}
-          />
-        </div>
+            <h2>Player</h2>
+            <div className="player-row">
+              <Controls
+                playing={playing}
+                disabled={busy || !canPlay}
+                onPlayPause={() => void togglePlay()}
+                onPrev={() => void run(prev, playing)}
+                onNext={() => void run(next, playing)}
+              />
+              {shelfToggle()}
+            </div>
+          </>
+        )}
 
         {SHOW_VOLUME_SLIDER && (
           <>
@@ -358,7 +388,7 @@ function Deck({ user, onLogout }: DeckProps) {
           </>
         )}
 
-        {cover.uri && (
+        {mobile && cover.uri && (
           <>
             <h2>Disco</h2>
             <DiscDetails

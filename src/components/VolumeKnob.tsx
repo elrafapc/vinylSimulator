@@ -21,7 +21,7 @@ const KEY_STEPS: Record<string, (v: number) => number> = {
   End: () => 100,
 };
 
-// Botão da vitrola (no lugar do 33/45 da foto) controla o volume do Spotify.
+// Knob de volume da tela do console (T55; antes ficava no lugar do 33/45 da foto) controla o volume do Spotify.
 export function VolumeKnob({ value, disabled, onChange, onCommit }: VolumeKnobProps) {
   const ref = useRef<HTMLDivElement>(null);
   const dragging = useRef(false);
@@ -86,12 +86,6 @@ export function VolumeKnob({ value, disabled, onChange, onCommit }: VolumeKnobPr
       }}
     >
       <span className="knob__cap" style={{ transform: `rotate(${valueToAngle(value)}deg)` }} />
-      <span className="knob__mark knob__mark--min" aria-hidden>
-        mín.
-      </span>
-      <span className="knob__mark knob__mark--max" aria-hidden>
-        máx.
-      </span>
     </div>
   );
 }

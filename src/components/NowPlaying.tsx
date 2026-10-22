@@ -1,4 +1,5 @@
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
+import { useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
+import { useLocalProgress } from '../hooks/useLocalProgress';
 import type { NowPlaying as NowPlayingState } from '../spotify/player';
 import { formatTime } from './lcd';
 import './NowPlaying.css';
@@ -11,20 +12,6 @@ interface NowPlayingProps {
 
 /** Quantidade de blocos da barra de progresso do display. */
 export const PROGRESS_BLOCKS = 20;
-
-// Entre uma consulta e outra (5s tocando) a barra anda sozinha: relógio local, sem chamar o Spotify (T46).
-function useLocalProgress(nowPlaying: NowPlayingState | null, fetchedAt: number): number {
-  const [now, setNow] = useState(() => Date.now());
-  const playing = nowPlaying?.isPlaying ?? false;
-  useEffect(() => {
-    if (!playing) return;
-    const id = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(id);
-  }, [playing]);
-  if (!nowPlaying) return 0;
-  const elapsed = playing ? Math.max(0, now - fetchedAt) : 0;
-  return Math.min(nowPlaying.durationMs, nowPlaying.progressMs + elapsed);
-}
 
 // Letreiro: o título só rola quando não cabe na largura do vidro.
 function Marquee({ text }: { text: string }) {

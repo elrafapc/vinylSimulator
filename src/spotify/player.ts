@@ -7,6 +7,8 @@ export interface NowPlaying {
   trackName: string;
   artist: string;
   albumName: string;
+  /** Ano de lançamento do álbum da faixa (de `release_date`), ex.: "1997". */
+  albumYear?: string;
   albumUri?: string;
   /** Álbum ou playlist em reprodução (pode diferir do álbum da faixa). */
   contextUri?: string;
@@ -59,9 +61,9 @@ async function shuffleIsOn(): Promise<boolean> {
   return ((await res.json()) as { shuffle_state?: boolean }).shuffle_state === true;
 }
 
-// Toca um álbum ou playlist da faixa 1, em ordem: o Spotify guarda o aleatório do último uso,
-// então desliga antes e depois do play (o play pode reativar) e confere no fim.
-export async function playDisc(contextUri: string, knownDeviceId?: string): Promise<void> {
+// Toca um álbum ou playlist em ordem, da faixa 1 ou de `startTrackUri` (clique na lista do console, T56):
+// o Spotify guarda o aleatório do último uso, então desliga antes e depois do play (o play pode reativar) e confere no fim.
+export async function playDisc(contextUri: string, knownDeviceId?: string, startTrackUri?: string): Promise<void> {
   // Dispositivo já conhecido pelo polling dispensa listar dispositivos (T46: menos chamadas).
   const deviceId = knownDeviceId ?? (await pickDevice());
   try {
@@ -73,7 +75,11 @@ export async function playDisc(contextUri: string, knownDeviceId?: string): Prom
   await spotifyFetch(`/me/player/play?${new URLSearchParams({ device_id: deviceId })}`, {
     method: 'PUT',
     headers: JSON_HEADERS,
-    body: JSON.stringify({ context_uri: contextUri, offset: { position: 0 }, position_ms: 0 }),
+    body: JSON.stringify({
+      context_uri: contextUri,
+      offset: startTrackUri ? { uri: startTrackUri } : { position: 0 },
+      position_ms: 0,
+    }),
   });
   await shuffleOff(deviceId);
   if (await shuffleIsOn()) {
@@ -114,7 +120,7 @@ interface PlayerResponse {
     name: string;
     duration_ms: number;
     artists?: Array<{ name: string }>;
-    album?: { name: string; uri: string; images: Array<{ url: string; width: number | null }> };
+    album?: { name: string; uri: string; release_date?: string; images: Array<{ url: string; width: number | null }> };
   } | null;
 }
 
@@ -129,6 +135,7 @@ export async function getNowPlaying(): Promise<NowPlaying | null> {
     trackName: data.item.name,
     artist: data.item.artists?.map((a) => a.name).join(', ') ?? '',
     albumName: data.item.album?.name ?? '',
+    albumYear: data.item.album?.release_date?.slice(0, 4) || undefined,
     albumUri: data.item.album?.uri,
     contextUri: data.context?.uri,
     imageUrl: pickImage(data.item.album?.images),

@@ -1,8 +1,11 @@
-import { useEffect, useRef, type RefObject } from 'react';
-import armUrl from '../assets/turntable-arm.png';
-import baseUrl from '../assets/turntable-base.png';
+import { useEffect, useRef, type CSSProperties, type ReactNode, type RefObject } from 'react';
+import { ARM_START } from './tonearm';
 import './Turntable.css';
-import { VolumeKnob } from './VolumeKnob';
+
+// Camadas do console (T55), em public/console/ — coordenadas em public/console/CONSOLE.md.
+const BASE_URL = '/console/console-base.webp';
+const RECORD_URL = '/console/record.webp';
+const ARM_URL = '/console/tonearm.webp';
 
 interface TurntableProps {
   playing: boolean;
@@ -10,12 +13,10 @@ interface TurntableProps {
   albumName?: string;
   disabled?: boolean;
   onNeedleClick?: () => void;
-  /** Botão da vitrola controla o volume (T27); sem onVolumeChange, o botão da foto fica decorativo. */
-  volume?: number;
-  volumeDisabled?: boolean;
-  onVolumeChange?: (value: number) => void;
-  /** Soltou o knob: envia o volume já. */
-  onVolumeCommit?: () => void;
+  /** Ângulo do braço tocando (ver armAngle); parado, vai para o descanso. */
+  armAngle?: number;
+  /** Tela do console e o que mais fica por cima da foto. */
+  children?: ReactNode;
 }
 
 // 33⅓ rpm ≈ 1,8 s por volta.
@@ -61,10 +62,10 @@ function usePlatterSpin(playing: boolean, recordRef: RefObject<HTMLDivElement | 
   }, [playing, recordRef]);
 }
 
-// Área clicável do braço, nas coordenadas do recorte (turntable-arm.png, 384×633):
-// contrapeso → torre → tubo → cápsula. Só o desenho responde ao clique, não o retângulo todo.
-const ARM_HIT_PATH = 'M341 40 L292 146 L268 199 L249 279 L231 359 L221 399 L204 439 L171 479 L121 524 L70 572';
-const HEADSHELL_HIT = '2,589 86,514 129,561 48,630';
+// Área clicável do braço, nas coordenadas de tonearm.webp (638×879):
+// contrapeso → pivô → tubo → cápsula. Só o desenho responde ao clique, não o retângulo todo.
+const ARM_HIT_PATH = 'M560 50 L485 172 L470 300 L430 450 L370 590 L300 660 L215 700';
+const HEADSHELL_HIT = '0,775 165,680 230,750 75,870';
 
 export function Turntable({
   playing,
@@ -72,31 +73,33 @@ export function Turntable({
   albumName,
   disabled,
   onNeedleClick,
-  volume = 50,
-  volumeDisabled,
-  onVolumeChange,
-  onVolumeCommit,
+  armAngle = ARM_START,
+  children,
 }: TurntableProps) {
   const state = playing ? 'turntable--playing' : 'turntable--stopped';
   const recordRef = useRef<HTMLDivElement>(null);
   usePlatterSpin(playing, recordRef);
 
   return (
-    <div className={`turntable ${state}`} data-testid="turntable">
-      {/* Foto da vitrola sem o braço; os reflexos do disco ficam nela, parados. */}
-      <img className="turntable__photo" data-testid="turntable-photo" src={baseUrl} alt="" draggable={false} />
+    <div className={`turntable ${state}`} data-testid="turntable" style={{ '--arm-angle': `${armAngle}deg` } as CSSProperties}>
+      {/* Foto do console sem disco nem braço (prato, painéis da tela e corpo dos botões já desenhados). */}
+      <img className="turntable__photo" data-testid="turntable-photo" src={BASE_URL} alt="" draggable={false} />
 
-      {/* Selo: a capa gira por cima do selo da foto. */}
-      <div className="turntable__record" data-testid="record" ref={recordRef}>
-        <div
-          className="turntable__label"
-          role="img"
-          aria-label={albumName ? `Capa de ${albumName}` : 'Sem disco'}
-          style={coverUrl ? { backgroundImage: `url(${coverUrl})` } : undefined}
-        />
+      {/* Gira primeiro (elemento interno), achata depois (contêiner): a foto não é 100% de cima. */}
+      <div className="turntable__platter">
+        <div className="turntable__record" data-testid="record" ref={recordRef}>
+          <img className="turntable__vinyl" src={RECORD_URL} alt="" draggable={false} />
+          <div
+            className="turntable__label"
+            role="img"
+            aria-label={albumName ? `Capa de ${albumName}` : 'Sem disco'}
+            style={coverUrl ? { backgroundImage: `url(${coverUrl})` } : undefined}
+          />
+        </div>
+        {/* Reflexo fixo: não gira com o disco. */}
+        <span className="turntable__sheen" aria-hidden />
+        <span className="turntable__spindle" aria-hidden />
       </div>
-      <span className="turntable__spindle" aria-hidden />
-      {onVolumeChange && <VolumeKnob value={volume} disabled={volumeDisabled} onChange={onVolumeChange} onCommit={onVolumeCommit} />}
 
       <button
         type="button"
@@ -108,15 +111,17 @@ export function Turntable({
       >
         <span className="tonearm__lift">
           <span className="tonearm__swing">
-            <img className="tonearm__photo" src={armUrl} alt="" draggable={false} />
-            <svg className="tonearm__hit" viewBox="0 0 384 633" aria-hidden focusable="false">
+            <img className="tonearm__photo" src={ARM_URL} alt="" draggable={false} />
+            <svg className="tonearm__hit" viewBox="0 0 638 879" aria-hidden focusable="false">
               <path d={ARM_HIT_PATH} />
               <polygon points={HEADSHELL_HIT} />
-              <circle cx="292" cy="146.5" r="47" />
+              <circle cx="485" cy="172" r="70" />
             </svg>
           </span>
         </span>
       </button>
+
+      {children}
     </div>
   );
 }

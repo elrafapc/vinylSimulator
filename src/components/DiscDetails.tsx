@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
-import { getDiscTracks, parseDiscUri, type Track } from '../spotify/api';
-import { errorMessage } from '../spotify/errors';
+import { useState } from 'react';
+import { useDiscTracks } from '../hooks/useDiscTracks';
+import { parseDiscUri } from '../spotify/api';
 import './DiscFrame.css';
+import { formatDuration } from './lcd';
 
 export interface DiscOnTable {
   uri?: string;
@@ -12,13 +13,6 @@ export interface DiscOnTable {
 interface DiscDetailsProps {
   disc: DiscOnTable;
   currentTrackId?: string;
-}
-
-type TracksState = { status: 'loading' } | { status: 'ok'; tracks: Track[] } | { status: 'error'; message: string };
-
-function formatDuration(ms: number): string {
-  const total = Math.round(ms / 1000);
-  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
 }
 
 interface DiscFrameProps {
@@ -55,26 +49,9 @@ interface DiscInfoProps {
 
 // Capa grande + faixas (busca as faixas ao aparecer). Usado no bloco "Disco" e nos detalhes da estante (T40).
 export function DiscInfo({ disc, currentTrackId }: DiscInfoProps) {
-  const [state, setState] = useState<TracksState>({ status: 'loading' });
   const { uri } = disc;
   const ref = parseDiscUri(uri);
-
-  useEffect(() => {
-    if (!uri || !parseDiscUri(uri)) return;
-    let cancelled = false;
-    setState({ status: 'loading' });
-    getDiscTracks(uri)
-      .then((tracks) => !cancelled && setState({ status: 'ok', tracks }))
-      .catch((error: unknown) => {
-        if (cancelled) return;
-        // Playlists de outras pessoas não liberam as faixas em Development Mode.
-        const message = parseDiscUri(uri)?.kind === 'album' ? errorMessage(error) : 'Faixas indisponíveis.';
-        setState({ status: 'error', message });
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [uri]);
+  const state = useDiscTracks(uri);
 
   const name = disc.name ?? 'disco';
 

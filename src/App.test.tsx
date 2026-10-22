@@ -186,22 +186,44 @@ describe('App', () => {
     expect(screen.getByTestId('turntable')).toHaveClass('turntable--playing');
   });
 
-  it('T32: música atual no topo do menu, com "Tocando em", e seções na ordem', async () => {
-    vi.mocked(getNowPlaying).mockResolvedValue({ ...soWhat(true), deviceName: 'MacBook' });
+  it('T56: música atual, player, ★ e "Tocando em" na tela do console; menu só com as outras seções', async () => {
+    vi.mocked(getNowPlaying).mockResolvedValue({ ...soWhat(true), albumYear: '1959', deviceName: 'MacBook' });
     render(<App />);
-    const menu = await screen.findByRole('complementary', { name: 'Menu' });
-    expect(await within(menu).findByText('So What')).toBeInTheDocument();
-    expect(within(menu).getByText('Tocando em: MacBook')).toBeInTheDocument();
-    expect(within(menu).getByRole('button', { name: 'Ver detalhes de Kind of Blue' })).toBeInTheDocument();
+    const screenPanel = await screen.findByTestId('console-screen');
+    expect(await within(screenPanel).findByText('So What')).toBeInTheDocument();
+    expect(within(screenPanel).getByText('Kind of Blue (1959)')).toBeInTheDocument();
+    expect(within(screenPanel).getByText('Tocando em: MacBook')).toBeInTheDocument();
+    expect(within(screenPanel).getByRole('button', { name: 'Pausar' })).toBeInTheDocument();
+    expect(within(screenPanel).getByRole('button', { name: 'Guardar Kind of Blue na estante' })).toBeInTheDocument();
+    const menu = screen.getByRole('complementary', { name: 'Menu' });
+    expect(within(menu).queryByText(/Tocando em/)).not.toBeInTheDocument();
+    expect(within(menu).queryByRole('button', { name: 'Pausar' })).not.toBeInTheDocument();
     expect(within(menu).getAllByRole('heading', { level: 2 }).map((h) => h.textContent?.replace(/[▸▾]/g, '').trim())).toEqual([
-      'Música atual',
-      'Player',
-      'Disco',
       'Estante',
       'Buscar discos',
       'Importar do Spotify',
       'Sons',
     ]);
+  });
+
+  it('T56: clicar numa faixa da lista toca o disco a partir dela', async () => {
+    vi.mocked(playDisc).mockResolvedValue();
+    vi.mocked(getDiscTracks).mockResolvedValue([
+      { id: 't1', number: 1, name: 'So What', artist: 'Miles Davis', durationMs: 545000 },
+      { id: 't2', number: 2, name: 'Freddie Freeloader', artist: 'Miles Davis', durationMs: 586000 },
+    ]);
+    render(<App />);
+    await selectKindOfBlue();
+    await userEvent.click(await screen.findByRole('button', { name: 'Tocar faixa 2: Freddie Freeloader' }));
+    expect(playDisc).toHaveBeenCalledWith(kindOfBlue.uri, undefined, 'spotify:track:t2');
+    expect(screen.getByTestId('turntable')).toHaveClass('turntable--playing');
+    expect(within(screen.getByTestId('console-screen')).getByRole('listitem', { current: true })).toHaveTextContent('Freddie Freeloader');
+  });
+
+  it('T55: clicar na gaveta de discos abre a estante', async () => {
+    render(<App />);
+    await userEvent.click(await screen.findByRole('button', { name: 'Abrir estante' }));
+    expect(screen.getByRole('dialog', { name: /^Estante/ })).toBeInTheDocument();
   });
 
   it('T32: Sons começa recolhido e abre ao clicar, sem desmontar os controles', async () => {

@@ -6,10 +6,12 @@ interface ShelfToggleProps {
   onShelf: boolean;
   busy?: boolean;
   onToggle: () => void;
+  /** Estilo: tecla de madeira do menu (padrão) ou a estrela discreta da tela do console (T56). */
+  className?: string;
 }
 
-// Ao lado do player: ★ = o disco que está tocando já está na estante; ☆ = não está.
-export function ShelfToggle({ disc, onShelf, busy, onToggle }: ShelfToggleProps) {
+// Ao lado do player (celular) ou na tela do console (desktop): ★ = o disco que está tocando já está na estante; ☆ = não está.
+export function ShelfToggle({ disc, onShelf, busy, onToggle, className = 'shelf-toggle' }: ShelfToggleProps) {
   const label = !disc
     ? 'Nenhum disco para guardar'
     : onShelf
@@ -18,7 +20,7 @@ export function ShelfToggle({ disc, onShelf, busy, onToggle }: ShelfToggleProps)
   return (
     <button
       type="button"
-      className="shelf-toggle"
+      className={className}
       aria-label={label}
       title={label}
       aria-pressed={onShelf}

@@ -1,7 +1,7 @@
 :root {
   font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
   color: var(--text);
-  background: radial-gradient(ellipse at top, var(--bg-glow), var(--bg) 60%) fixed;
+  background: var(--bg);
 }
 
 * {
@@ -158,8 +158,7 @@ button {
   align-items: center;
   justify-content: space-between;
   padding-block: 20px 12px;
-  background: color-mix(in srgb, var(--bg) 82%, transparent);
-  backdrop-filter: blur(8px);
+  background: var(--bg);
 }
 
 .deck__menu-toggle {
@@ -214,8 +213,9 @@ button {
   height: 100vh;
   padding: 24px;
   overflow-y: auto;
+  /* Mesmo fundo da página; a separação é só uma linha sutil. */
   border-left: 1px solid var(--border);
-  background: var(--panel);
+  background: var(--bg);
 }
 
 .deck__menu[hidden] {
@@ -785,13 +785,12 @@ button {
 
 /* ===== Menu vintage (T53): painel de madeira, plaquinhas de metal, baquelite, alavancas e faders. ===== */
 
-/* O menu é sempre madeira escura: os tokens de cor são trocados só aqui dentro,
-   então busca, listas, faixas e importador seguem legíveis sem regra própria. */
-.deck__menu {
+/* Menu com o fundo liso da página (sem madeira). No escuro, os tokens de texto creme do menu
+   são trocados só aqui dentro; no claro, valem os do tema (texto escuro sobre o fundo claro). */
+:root:not([data-theme='light']) .deck__menu {
   --text: var(--menu-text);
   --muted: var(--menu-muted);
-  --panel: var(--menu-wood);
-  --border: rgb(255 230 200 / 0.16);
+  --border: rgb(255 230 200 / 0.1);
   --hover: rgb(255 240 220 / 0.07);
   --input-bg: var(--bakelite);
   --placeholder: var(--menu-wood-light);
@@ -800,11 +799,6 @@ button {
   --focus: #f0c674;
   color-scheme: dark;
   color: var(--text);
-  border-left-color: var(--menu-wood-dark);
-  background:
-    repeating-linear-gradient(92deg, var(--wood-grain) 0 1px, transparent 1px 9px, var(--wood-grain) 9px 10px, transparent 10px 23px),
-    linear-gradient(180deg, var(--menu-wood-light), var(--menu-wood) 18%, var(--menu-wood) 82%, var(--menu-wood-dark));
-  box-shadow: inset 6px 0 12px rgb(0 0 0 / 0.45);
 }
 
 /* Títulos: plaquinha de metal escovado com dois parafusos e texto gravado. */

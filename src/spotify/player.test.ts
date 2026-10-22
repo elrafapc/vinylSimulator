@@ -61,6 +61,15 @@ describe('player', () => {
     expect(call(2).body).toBe(JSON.stringify({ context_uri: 'spotify:album:a1', offset: { position: 0 }, position_ms: 0 }));
   });
 
+  it('T56: clicar numa faixa toca o disco a partir dela (offset pela uri da faixa), sem aleatório', async () => {
+    spotify();
+    await playDisc('spotify:album:a1', undefined, 'spotify:track:t3');
+    expect(call(2).body).toBe(
+      JSON.stringify({ context_uri: 'spotify:album:a1', offset: { uri: 'spotify:track:t3' }, position_ms: 0 }),
+    );
+    expect(urls().filter((u) => u.includes('/shuffle'))).toHaveLength(2);
+  });
+
   it('playlists seguem a mesma regra', async () => {
     spotify();
     await playDisc('spotify:playlist:p1');
@@ -194,7 +203,7 @@ describe('player', () => {
           name: 'So What',
           duration_ms: 545000,
           artists: [{ name: 'Miles Davis' }],
-          album: { name: 'Kind of Blue', uri: 'spotify:album:a1', images: [{ url: 'img', width: 640 }] },
+          album: { name: 'Kind of Blue', uri: 'spotify:album:a1', release_date: '1959-08-17', images: [{ url: 'img', width: 640 }] },
         },
       }),
     );
@@ -204,6 +213,7 @@ describe('player', () => {
       trackName: 'So What',
       artist: 'Miles Davis',
       albumName: 'Kind of Blue',
+      albumYear: '1959',
       albumUri: 'spotify:album:a1',
       contextUri: 'spotify:album:a1',
       imageUrl: 'img',

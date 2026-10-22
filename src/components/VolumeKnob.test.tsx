@@ -32,8 +32,6 @@ describe('VolumeKnob', () => {
     expect(knob()).toHaveAttribute('aria-valuemin', '0');
     expect(knob()).toHaveAttribute('aria-valuemax', '100');
     expect(container.querySelector('.knob__cap')).toHaveStyle({ transform: 'rotate(67.5deg)' });
-    expect(screen.getByText('mín.')).toBeInTheDocument();
-    expect(screen.getByText('máx.')).toBeInTheDocument();
   });
 
   it('setas, PageUp/PageDown, Home/End', () => {

@@ -1,6 +1,6 @@
 # Camadas do console — coordenadas
 
-Base: console-base.webp — 1673×940 (proporção 1673/940 ≈ 1.780). Todas as posições em % da base (left/top a partir do canto superior esquerdo).
+Base: console-base.webp — 1673×940, FUNDO TRANSPARENTE (só o console recortado, sem a mesa; tampa de acrílico semitransparente) (proporção 1673/940 ≈ 1.780). Todas as posições em % da base (left/top a partir do canto superior esquerdo).
 
 | Elemento | px (na base) | % |
 |---|---|---|
@@ -54,3 +54,9 @@ Detalhes:
 - Fontes: serifada para faixa e lista (ex.: Lora/Libre Baskerville, hospedada localmente); tempos em sans pequena.
 - Tamanhos de fonte em unidades do contêiner (cqw) para escalar com o console: faixa ≈ 1.05cqw, artista ≈ 0.85cqw, álbum ≈ 0.62cqw, lista ≈ 0.80cqw, tempos ≈ 0.68cqw (cqw = 1% da largura do console).
 - Cores (amostradas do design): faixa #EBDCC5 · artista #B2A591 · álbum #837A6C · tempos #A59B87 · lista #9B8F7E · duração na lista #8A7F70 · faixa atual e progresso (âmbar) #D89257 · fundo dos painéis #13100D.
+
+
+## Fundo da página
+- A base não tem mais a mesa de madeira atrás: o fundo da página aparece em volta do console. Usar um fundo liso e uniforme em toda a página (área principal e menu lateral iguais): escuro #14100D; claro #ECE6DC.
+- Sombra do console: filter: drop-shadow(0 26px 30px rgba(0,0,0,.55)) no contêiner da base (no claro, .30).
+- Nenhuma moldura, borda ou fundo próprio no contêiner do console.
